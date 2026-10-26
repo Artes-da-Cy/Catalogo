@@ -1,0 +1,854 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#7b4566">
+  <title>Administração | Artes da Cy</title>
+
+  <style>
+    :root {
+      --principal: #7b4566;
+      --fundo: #f8f4f7;
+      --texto: #352b32;
+      --borda: #e5dbe2;
+      --branco: #ffffff;
+      --perigo: #b42332;
+      --sucesso: #287447;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--fundo);
+      color: var(--texto);
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      padding: 22px 16px;
+      background: var(--principal);
+      color: white;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    header p {
+      margin: 5px 0 0;
+      font-size: 14px;
+    }
+
+    main {
+      width: min(100% - 24px, 900px);
+      margin: 20px auto 40px;
+    }
+
+    .aviso {
+      padding: 12px;
+      border-radius: 8px;
+      background: #fff3d6;
+      color: #694d13;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .painel {
+      background: white;
+      border: 1px solid var(--borda);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-size: 19px;
+      margin: 0 0 14px;
+    }
+
+    h3 {
+      font-size: 16px;
+      margin: 20px 0 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: bold;
+      margin: 12px 0 5px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #cfc3cc;
+      border-radius: 7px;
+      font: inherit;
+      background: white;
+      color: var(--texto);
+    }
+
+    textarea {
+      min-height: 85px;
+      resize: vertical;
+    }
+
+    .linha {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .checks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin: 14px 0;
+    }
+
+    .checks label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0;
+      font-weight: normal;
+    }
+
+    .checks input {
+      width: auto;
+    }
+
+    button, .botao {
+      display: inline-block;
+      border: 0;
+      border-radius: 7px;
+      padding: 11px 14px;
+      background: var(--principal);
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    button.secundario {
+      background: #eee6ec;
+      color: var(--texto);
+    }
+
+    button.perigo {
+      background: var(--perigo);
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .acoes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .produto {
+      border: 1px solid var(--borda);
+      border-radius: 9px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+
+    .produto strong {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+
+    .produto small {
+      display: block;
+      color: #665a63;
+      margin: 4px 0 10px;
+    }
+
+    .produto .acoes {
+      margin-top: 8px;
+    }
+
+    .produto .acoes button {
+      flex: 1;
+    }
+
+    .status {
+      padding: 10px;
+      margin-top: 12px;
+      border-radius: 7px;
+      background: #eee6ec;
+      overflow-wrap: anywhere;
+      font-size: 14px;
+    }
+
+    .status.sucesso {
+      background: #e4f5e9;
+      color: var(--sucesso);
+    }
+
+    .status.erro {
+      background: #fde8e8;
+      color: var(--perigo);
+    }
+
+    .oculto { display: none !important; }
+
+    @media (max-width: 520px) {
+      .linha { grid-template-columns: 1fr; }
+      .painel { padding: 13px; }
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>Artes da Cy</h1>
+  <p>Administração local do catálogo</p>
+</header>
+
+<main>
+  <div class="aviso">
+    <strong>Modo local:</strong> as alterações ficam na memória desta página
+    até você exportar o arquivo. Mantenha uma cópia de segurança do
+    <code>produtos.json</code> original.
+  </div>
+
+  <section class="painel">
+    <h2>1. Carregar catálogo</h2>
+    <p>Carregue o arquivo atual ou selecione um JSON exportado anteriormente.</p>
+
+    <div class="acoes">
+      <button type="button" id="carregarServidor">
+        Carregar produtos.json
+      </button>
+    </div>
+
+    <label for="arquivoJson">Ou selecionar arquivo JSON</label>
+    <input type="file" id="arquivoJson" accept=".json,application/json">
+
+    <div id="status" class="status" role="status">
+      Aguardando carregamento dos dados.
+    </div>
+  </section>
+
+  <section class="painel">
+    <h2>2. Produtos</h2>
+
+    <label for="filtroProdutos">Pesquisar produto</label>
+    <input id="filtroProdutos" type="search"
+      placeholder="Digite o nome do produto...">
+
+    <div id="listaProdutos">
+      <p>Carregue o catálogo para visualizar os produtos.</p>
+    </div>
+  </section>
+
+  <section class="painel" id="painelFormulario">
+    <h2 id="tituloFormulario">3. Cadastrar produto</h2>
+
+    <form id="formProduto">
+      <input type="hidden" id="produtoOriginalId">
+
+      <label for="produtoId">Identificador do produto</label>
+      <input id="produtoId" required
+        placeholder="Ex.: caixa-personalizada">
+
+      <label for="produtoNome">Nome do produto</label>
+      <input id="produtoNome" required>
+
+      <label for="produtoCategoria">Categoria</label>
+      <select id="produtoCategoria" required></select>
+
+      <label for="produtoDescricao">Descrição</label>
+      <textarea id="produtoDescricao" required></textarea>
+
+      <div class="linha">
+        <div>
+          <label for="produtoMedidas">Medidas</label>
+          <input id="produtoMedidas" placeholder="Ex.: 20 x 15 cm">
+        </div>
+        <div>
+          <label for="produtoMateriais">Materiais</label>
+          <input id="produtoMateriais"
+            placeholder="Ex.: papel, MDF...">
+        </div>
+      </div>
+
+      <label for="produtoImagens">
+        Caminhos das imagens (um por linha)
+      </label>
+      <textarea id="produtoImagens"
+        placeholder="imagens/produtos/caixa.jpg"></textarea>
+      <small>
+        Copie as imagens para a pasta do projeto e informe os caminhos
+        relativos. A primeira imagem será a principal.
+      </small>
+
+      <div class="linha">
+        <div>
+          <label for="produtoPreco">Preço em reais</label>
+          <input id="produtoPreco" type="number" min="0"
+            step="0.01" value="0">
+        </div>
+        <div>
+          <label for="produtoOrdem">Ordem de exibição</label>
+          <input id="produtoOrdem" type="number" min="0"
+            step="1" value="1">
+        </div>
+      </div>
+
+      <div class="checks">
+        <label><input id="produtoExibirPreco" type="checkbox" checked>
+          Exibir preço</label>
+        <label><input id="produtoDestaque" type="checkbox">
+          Produto em destaque</label>
+        <label><input id="produtoAtivo" type="checkbox" checked>
+          Produto ativo</label>
+      </div>
+
+      <div class="acoes">
+        <button type="submit" id="salvarProduto">Salvar produto</button>
+        <button type="button" class="secundario"
+          id="cancelarEdicao">Limpar formulário</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="painel">
+    <h2>4. Categorias</h2>
+
+    <div id="listaCategorias"></div>
+
+    <h3 id="tituloCategoria">Cadastrar categoria</h3>
+    <form id="formCategoria">
+      <input type="hidden" id="categoriaOriginalId">
+
+      <label for="categoriaId">Identificador</label>
+      <input id="categoriaId" required
+        placeholder="Ex.: festas">
+
+      <label for="categoriaNome">Nome</label>
+      <input id="categoriaNome" required>
+
+      <label for="categoriaDescricao">Descrição</label>
+      <textarea id="categoriaDescricao"></textarea>
+
+      <label for="categoriaImagem">Caminho da imagem</label>
+      <input id="categoriaImagem"
+        placeholder="imagens/categorias/festas.jpg">
+
+      <label for="categoriaOrdem">Ordem de exibição</label>
+      <input id="categoriaOrdem" type="number"
+        min="0" step="1" value="1">
+
+      <div class="checks">
+        <label><input id="categoriaAtiva" type="checkbox" checked>
+          Categoria ativa</label>
+      </div>
+
+      <div class="acoes">
+        <button type="submit">Salvar categoria</button>
+        <button type="button" class="secundario"
+          id="cancelarCategoria">Limpar formulário</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="painel">
+    <h2>5. Exportar catálogo</h2>
+    <p>
+      Gere um novo <code>produtos.json</code> com as alterações.
+      O arquivo original não será sobrescrito automaticamente.
+    </p>
+    <div class="acoes">
+      <button type="button" id="exportarJson">
+        Exportar produtos.json
+      </button>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+let dados = null;
+
+const $ = id => document.getElementById(id);
+
+function mostrarStatus(mensagem, tipo = "") {
+  const el = $("status");
+  el.textContent = mensagem;
+  el.className = "status" + (tipo ? " " + tipo : "");
+}
+
+function normalizarId(valor) {
+  return valor.trim().toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function escapar(valor) {
+  return String(valor ?? "").replace(/[&<>"']/g, caractere => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[caractere]);
+}
+
+function validarDados(objeto) {
+  if (!objeto || typeof objeto !== "object") {
+    throw new Error("O arquivo não contém um objeto válido.");
+  }
+
+  if (!objeto.configuracao ||
+      !Array.isArray(objeto.categorias) ||
+      !Array.isArray(objeto.produtos)) {
+    throw new Error(
+      "Estrutura inválida. Esperado: configuracao, categorias e produtos."
+    );
+  }
+
+  return objeto;
+}
+
+async function carregarJsonServidor() {
+  mostrarStatus("Carregando produtos.json...");
+
+  try {
+    const resposta = await fetch("./produtos.json", {
+      cache: "no-store"
+    });
+
+    if (!resposta.ok) {
+      throw new Error("Não foi possível abrir produtos.json (" +
+        resposta.status + ").");
+    }
+
+    const texto = await resposta.text();
+    dados = validarDados(JSON.parse(removerComentarios(texto)));
+
+    atualizarInterface();
+    mostrarStatus("Catálogo carregado. " +
+      dados.produtos.length + " produto(s) e " +
+      dados.categorias.length + " categoria(s).", "sucesso");
+  } catch (erro) {
+    mostrarStatus(
+      "Não foi possível carregar automaticamente. " +
+      "Se estiver abrindo o HTML como arquivo local, selecione " +
+      "produtos.json no campo de arquivo. Detalhe: " + erro.message,
+      "erro"
+    );
+  }
+}
+
+function removerComentarios(texto) {
+  let resultado = "";
+  let dentroString = false;
+  let escape = false;
+
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i];
+    const proximo = texto[i + 1];
+
+    if (dentroString) {
+      resultado += c;
+
+      if (escape) {
+        escape = false;
+      } else if (c === "\\") {
+        escape = true;
+      } else if (c === '"') {
+        dentroString = false;
+      }
+      continue;
+    }
+
+    if (c === '"') {
+      dentroString = true;
+      resultado += c;
+      continue;
+    }
+
+    if (c === "/" && proximo === "*") {
+      i += 2;
+      while (i < texto.length &&
+        !(texto[i] === "*" && texto[i + 1] === "/")) i++;
+      i++;
+      resultado += "\n";
+      continue;
+    }
+
+    if (c === "/" && proximo === "/") {
+      while (i < texto.length && texto[i] !== "\n") i++;
+      resultado += "\n";
+      continue;
+    }
+
+    resultado += c;
+  }
+
+  return resultado;
+}
+
+$("carregarServidor").addEventListener("click", carregarJsonServidor);
+
+$("arquivoJson").addEventListener("change", async evento => {
+  const arquivo = evento.target.files[0];
+  if (!arquivo) return;
+
+  try {
+    const texto = await arquivo.text();
+    dados = validarDados(JSON.parse(removerComentarios(texto)));
+    atualizarInterface();
+
+    mostrarStatus(
+      "Arquivo carregado: " + arquivo.name + ".",
+      "sucesso"
+    );
+  } catch (erro) {
+    mostrarStatus("Erro ao ler o arquivo: " + erro.message, "erro");
+  }
+
+  evento.target.value = "";
+});
+
+function atualizarInterface() {
+  renderizarProdutos();
+  renderizarCategorias();
+  atualizarSelectCategorias();
+}
+
+function atualizarSelectCategorias() {
+  const select = $("produtoCategoria");
+  const atual = select.value;
+
+  select.innerHTML = dados.categorias
+    .filter(c => c.ativa !== false)
+    .map(c => `<option value="${escapar(c.id)}">${escapar(c.nome)}</option>`)
+    .join("");
+
+  if ([...select.options].some(o => o.value === atual)) {
+    select.value = atual;
+  }
+}
+
+function renderizarProdutos() {
+  const filtro = $("filtroProdutos").value.trim().toLocaleLowerCase("pt-BR");
+  const lista = $("listaProdutos");
+
+  const produtos = dados.produtos.filter(p =>
+    String(p.nome || "").toLocaleLowerCase("pt-BR").includes(filtro)
+  );
+
+  if (!produtos.length) {
+    lista.innerHTML = "<p>Nenhum produto encontrado.</p>";
+    return;
+  }
+
+  lista.innerHTML = produtos.map(p => {
+    const categoria = dados.categorias.find(c => c.id === p.categoria);
+    const preco = (Number(p.preco || 0) / 100).toLocaleString("pt-BR", {
+      style: "currency", currency: "BRL"
+    });
+
+    return `
+      <article class="produto">
+        <strong>${escapar(p.nome)}</strong>
+        <small>
+          ID: ${escapar(p.id)} ·
+          Categoria: ${escapar(categoria?.nome || p.categoria)} ·
+          ${p.ativo === false ? "Inativo" : "Ativo"} ·
+          ${p.exibirPreco === false ? "Preço oculto" : preco}
+        </small>
+        <div class="acoes">
+          <button type="button" data-editar="${escapar(p.id)}">
+            Editar
+          </button>
+          <button type="button" class="perigo"
+            data-excluir="${escapar(p.id)}">
+            Excluir
+          </button>
+        </div>
+      </article>`;
+  }).join("");
+
+  lista.querySelectorAll("[data-editar]").forEach(botao => {
+    botao.addEventListener("click", () =>
+      editarProduto(botao.dataset.editar)
+    );
+  });
+
+  lista.querySelectorAll("[data-excluir]").forEach(botao => {
+    botao.addEventListener("click", () =>
+      excluirProduto(botao.dataset.excluir)
+    );
+  });
+}
+
+$("filtroProdutos").addEventListener("input", renderizarProdutos);
+
+function editarProduto(id) {
+  const p = dados.produtos.find(item => item.id === id);
+  if (!p) return;
+
+  $("tituloFormulario").textContent = "Editar produto";
+  $("produtoOriginalId").value = p.id;
+  $("produtoId").value = p.id;
+  $("produtoNome").value = p.nome || "";
+  $("produtoCategoria").value = p.categoria || "";
+  $("produtoDescricao").value = p.descricao || "";
+  $("produtoMedidas").value = p.medidas || "";
+  $("produtoMateriais").value = p.materiais || "";
+  $("produtoImagens").value = (p.imagens || []).join("\n");
+  $("produtoPreco").value = (Number(p.preco || 0) / 100).toFixed(2);
+  $("produtoOrdem").value = Number(p.ordem || 1);
+  $("produtoExibirPreco").checked = p.exibirPreco !== false;
+  $("produtoDestaque").checked = p.destaque === true;
+  $("produtoAtivo").checked = p.ativo !== false;
+
+  $("painelFormulario").scrollIntoView({ behavior: "smooth" });
+}
+
+function limparFormularioProduto() {
+  $("formProduto").reset();
+  $("produtoOriginalId").value = "";
+  $("produtoOrdem").value = "1";
+  $("tituloFormulario").textContent = "3. Cadastrar produto";
+  $("produtoExibirPreco").checked = true;
+  $("produtoAtivo").checked = true;
+}
+
+$("cancelarEdicao").addEventListener("click", limparFormularioProduto);
+
+$("formProduto").addEventListener("submit", evento => {
+  evento.preventDefault();
+  if (!dados) return alert("Carregue primeiro o catálogo.");
+
+  const id = normalizarId($("produtoId").value);
+  const originalId = $("produtoOriginalId").value;
+
+  if (!id) return alert("Informe um identificador válido.");
+
+  if (dados.produtos.some(p => p.id === id && p.id !== originalId)) {
+    return alert("Já existe um produto com esse identificador.");
+  }
+
+  if (!dados.categorias.some(c => c.id === $("produtoCategoria").value)) {
+    return alert("Selecione uma categoria válida.");
+  }
+
+  const precoReais = Number($("produtoPreco").value || 0);
+  if (!Number.isFinite(precoReais) || precoReais < 0) {
+    return alert("Informe um preço válido.");
+  }
+
+  const produto = {
+    id,
+    categoria: $("produtoCategoria").value,
+    nome: $("produtoNome").value.trim(),
+    descricao: $("produtoDescricao").value.trim(),
+    medidas: $("produtoMedidas").value.trim(),
+    materiais: $("produtoMateriais").value.trim(),
+    imagens: $("produtoImagens").value
+      .split("\n").map(s => s.trim()).filter(Boolean),
+    preco: Math.round(precoReais * 100),
+    exibirPreco: $("produtoExibirPreco").checked,
+    destaque: $("produtoDestaque").checked,
+    ativo: $("produtoAtivo").checked,
+    ordem: Math.max(0, Number($("produtoOrdem").value || 1))
+  };
+
+  if (originalId) {
+    const indice = dados.produtos.findIndex(p => p.id === originalId);
+    if (indice < 0) return alert("Produto original não encontrado.");
+    dados.produtos[indice] = produto;
+  } else {
+    dados.produtos.push(produto);
+  }
+
+  limparFormularioProduto();
+  atualizarInterface();
+  mostrarStatus(
+    "Produto salvo nesta sessão. Exporte o JSON para guardar as alterações.",
+    "sucesso"
+  );
+});
+
+function excluirProduto(id) {
+  const p = dados.produtos.find(item => item.id === id);
+  if (!p) return;
+
+  if (!confirm(`Excluir o produto "${p.nome}"?`)) return;
+
+  dados.produtos = dados.produtos.filter(item => item.id !== id);
+  atualizarInterface();
+  mostrarStatus(
+    "Produto excluído desta sessão. Exporte o JSON para guardar a alteração.",
+    "sucesso"
+  );
+}
+
+function renderizarCategorias() {
+  $("listaCategorias").innerHTML = dados.categorias.map(c => {
+    const quantidade = dados.produtos.filter(p => p.categoria === c.id).length;
+
+    return `
+      <article class="produto">
+        <strong>${escapar(c.nome)}</strong>
+        <small>
+          ID: ${escapar(c.id)} · ${quantidade} produto(s) ·
+          ${c.ativa === false ? "Inativa" : "Ativa"}
+        </small>
+        <div class="acoes">
+          <button type="button" data-editar-categoria="${escapar(c.id)}">
+            Editar
+          </button>
+          <button type="button" class="perigo"
+            data-excluir-categoria="${escapar(c.id)}">
+            Excluir
+          </button>
+        </div>
+      </article>`;
+  }).join("");
+
+  $("listaCategorias").querySelectorAll("[data-editar-categoria]")
+    .forEach(botao => botao.addEventListener("click", () =>
+      editarCategoria(botao.dataset.editarCategoria)
+    ));
+
+  $("listaCategorias").querySelectorAll("[data-excluir-categoria]")
+    .forEach(botao => botao.addEventListener("click", () =>
+      excluirCategoria(botao.dataset.excluirCategoria)
+    ));
+}
+
+function editarCategoria(id) {
+  const c = dados.categorias.find(item => item.id === id);
+  if (!c) return;
+
+  $("tituloCategoria").textContent = "Editar categoria";
+  $("categoriaOriginalId").value = c.id;
+  $("categoriaId").value = c.id;
+  $("categoriaNome").value = c.nome || "";
+  $("categoriaDescricao").value = c.descricao || "";
+  $("categoriaImagem").value = c.imagem || "";
+  $("categoriaOrdem").value = Number(c.ordem || 1);
+  $("categoriaAtiva").checked = c.ativa !== false;
+  $("formCategoria").scrollIntoView({ behavior: "smooth" });
+}
+
+function limparFormularioCategoria() {
+  $("formCategoria").reset();
+  $("categoriaOriginalId").value = "";
+  $("categoriaOrdem").value = "1";
+  $("categoriaAtiva").checked = true;
+  $("tituloCategoria").textContent = "Cadastrar categoria";
+}
+
+$("cancelarCategoria").addEventListener("click", limparFormularioCategoria);
+
+$("formCategoria").addEventListener("submit", evento => {
+  evento.preventDefault();
+  if (!dados) return alert("Carregue primeiro o catálogo.");
+
+  const id = normalizarId($("categoriaId").value);
+  const originalId = $("categoriaOriginalId").value;
+
+  if (!id) return alert("Informe um identificador válido.");
+
+  if (dados.categorias.some(c => c.id === id && c.id !== originalId)) {
+    return alert("Já existe uma categoria com esse identificador.");
+  }
+
+  if (originalId && id !== originalId &&
+      dados.produtos.some(p => p.categoria === originalId)) {
+    return alert(
+      "Esta categoria possui produtos. Mantenha o identificador para não " +
+      "desvinculá-los. A transferência dos produtos pode ser feita editando-os."
+    );
+  }
+
+  const categoria = {
+    id,
+    nome: $("categoriaNome").value.trim(),
+    descricao: $("categoriaDescricao").value.trim(),
+    imagem: $("categoriaImagem").value.trim(),
+    ordem: Math.max(0, Number($("categoriaOrdem").value || 1)),
+    ativa: $("categoriaAtiva").checked
+  };
+
+  if (originalId) {
+    const indice = dados.categorias.findIndex(c => c.id === originalId);
+    dados.categorias[indice] = categoria;
+  } else {
+    dados.categorias.push(categoria);
+  }
+
+  limparFormularioCategoria();
+  atualizarInterface();
+  mostrarStatus("Categoria salva. Exporte o JSON para guardar a alteração.", "sucesso");
+});
+
+function excluirCategoria(id) {
+  const categoria = dados.categorias.find(c => c.id === id);
+  if (!categoria) return;
+
+  const quantidade = dados.produtos.filter(p => p.categoria === id).length;
+
+  if (quantidade > 0) {
+    return alert(
+      `Não é possível excluir esta categoria: há ${quantidade} produto(s) ` +
+      "vinculado(s). Edite ou transfira esses produtos primeiro."
+    );
+  }
+
+  if (!confirm(`Excluir a categoria "${categoria.nome}"?`)) return;
+
+  dados.categorias = dados.categorias.filter(c => c.id !== id);
+  atualizarInterface();
+  mostrarStatus("Categoria excluída. Exporte o JSON para guardar a alteração.", "sucesso");
+}
+
+$("exportarJson").addEventListener("click", () => {
+  if (!dados) return alert("Carregue primeiro o catálogo.");
+
+  const conteudo = JSON.stringify(dados, null, 2);
+  const blob = new Blob([conteudo], {
+    type: "application/json;charset=utf-8"
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "produtos.json";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  mostrarStatus(
+    "Arquivo produtos.json exportado. Substitua o JSON antigo no projeto " +
+    "e teste o catálogo antes de publicar.",
+    "sucesso"
+  );
+});
+</script>
+</body>
+</html>

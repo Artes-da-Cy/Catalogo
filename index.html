@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="theme-color" content="#f7f2e9">
+  <meta name="description" content="Artes da Cy — artesanato, presentes e produtos personalizados feitos com carinho.">
+
+  <title>Artes da Cy | Feito com carinho</title>
+
+  <link rel="stylesheet" href="css/estilo.css">
+  <link rel="stylesheet" href="css/catalogo.css">
+  <link rel="stylesheet" href="css/navbar-carrinho.css">
+
+  <script src="js/produtos.js" defer></script>
+  <script src="js/app.js" defer></script>
+  <script src="js/catalogo.js" defer></script>
+  <script src="js/busca.js" defer></script>
+  
+</head>
+
+<body>
+
+  <header class="cabecalho">
+    <a class="marca" href="index.html" aria-label="Artes da Cy - Página inicial">
+      <img
+        id="logoMarca"
+        class="logo-marca"
+        src="imagens/logo.jpg"
+        alt="Artes da Cy"
+      >
+      <span>Artes da Cy</span>
+    </a>
+
+    <nav class="menu-principal" aria-label="Navegação principal">
+      <a href="#inicio">Início</a>
+      <a href="#categorias">Categorias</a>
+      <a href="#destaques">Destaques</a>
+      <a href="#sobre">Sobre</a>
+    </nav>
+
+    <a
+      id="linkWhatsApp"
+      class="botao-contato"
+      href="https://wa.me/5514991223869"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <span class="icone-whatsapp" aria-hidden="true">◉</span>
+      Fale conosco
+    </a>
+  </header>
+
+  <main>
+
+    <section class="capa" id="inicio">
+      <img
+        id="imagemCapa"
+        class="imagem-capa"
+        src="imagens/capa.jpg"
+        alt=""
+      >
+      <div class="capa-sobreposicao"></div>
+
+      <div class="conteudo-capa">
+        <span class="etiqueta-capa">FEITO À MÃO, FEITO COM AMOR</span>
+
+        <h1 id="tituloCapa">Artes da Cy</h1>
+        <p id="subtituloCapa">
+          Peças únicas, feitas com carinho para você.
+        </p>
+        <a href="#categorias" class="botao-principal">
+          Descubra nossas criações
+          <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="apresentacao" id="sobre">
+      <span class="sobretitulo">UM TOQUE ESPECIAL</span>
+      <h2>Pequenos detalhes, grandes significados.</h2>
+      <p id="textoApresentacao">
+        Cada criação carrega cuidado, criatividade e dedicação.
+        Descubra peças artesanais e personalizadas que tornam
+        momentos especiais ainda mais inesquecíveis.
+      </p>
+    </section>
+    
+<!--<section class="area-busca" aria-label="Buscar produtos">
+  <div class="area-busca-conteudo">
+    <span class="sobretitulo">ENCONTRE SUA CRIAÇÃO</span>
+    <h2>O que você está procurando?</h2>
+
+    <div id="buscaInicio"></div>
+
+    <p class="dica-busca">
+      Pesquise por produto, material ou tipo de presente.
+    </p>
+  </div>
+</section>-->
+
+
+    <section class="secao" id="categorias">
+      <div class="cabecalho-secao">
+        <div>
+          <span class="sobretitulo">EXPLORE NOSSO CATÁLOGO</span>
+          <h2>Nossas categorias</h2>
+          <p>Encontre a criação perfeita para cada ocasião.</p>
+        </div>
+      </div>
+
+      <div id="listaCategorias" class="grade-categorias">
+        <p class="mensagem-vazia">
+          Nossas categorias aparecerão aqui.
+        </p>
+      </div>
+    </section>
+
+    <section class="secao secao-destaques" id="destaques">
+      <div class="cabecalho-secao">
+        <div>
+          <span class="sobretitulo">ESCOLHAS ESPECIAIS</span>
+          <h2>Produtos em destaque</h2>
+          <p>Conheça algumas das nossas criações.</p>
+        </div>
+      </div>
+
+      <div id="listaProdutos" class="grade-produtos">
+        <p class="mensagem-vazia">
+          Nossos produtos aparecerão aqui.
+        </p>
+      </div>
+    </section>
+
+    <section class="convite">
+      <div>
+        <span class="sobretitulo">VAMOS CRIAR ALGO ESPECIAL?</span>
+        <h2>Seu próximo presente pode começar aqui.</h2>
+        <p>
+          Entre em contato para conhecer nossos produtos
+          e consultar opções de personalização.
+        </p>
+      </div>
+
+      <a
+        class="botao-principal"
+        href="https://wa.me/5514991223869?text=Ol%C3%A1!%20Gostaria%20de%20conhecer%20os%20produtos%20da%20Artes%20da%20Cy."
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Converse pelo WhatsApp
+        <span aria-hidden="true">→</span>
+      </a>
+    </section>
+
+  </main>
+
+    <footer class="rodape">
+    <a href="#inicio" class="marca-rodape">Artes da Cy</a>
+    <p>Artesanato e personalização feitos com carinho.</p><div class="redes-sociais">
+  <a
+    class="link-rede-social"
+    href="https://www.instagram.com/atelie_artesdacy/"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Visite nosso Instagram"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="5"/>
+      <circle cx="12" cy="12" r="4"/>
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+    </svg>
+    <span>@atelie_artesdacy</span>
+  </a>
+</div>
+
+<p class="creditos">
+  © <span id="anoAtual">2026</span> Artes da Cy. Todos os direitos reservados.
+</p>
+
+  </footer>
+    <p class="creditos">
+      © <span id="anoAtual">2026</span> Artes da Cy. Todos os direitos reservados.
+    </p>
+  </footer>
+
+</body>
+</html>

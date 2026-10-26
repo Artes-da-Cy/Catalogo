@@ -1,0 +1,155 @@
+/*
+ * ARTES DA CY — CATÁLOGO DE PRODUTOS
+ *
+ * CATEGORIAS DISPONÍVEIS:
+ * "presentes"      = Presentes personalizados
+ * "lembrancinhas"  = Lembrancinhas
+ * "decoracao"      = Decoração
+ * "papelaria"      = Papelaria personalizada
+ *
+ * Para adicionar uma categoria:
+ * 1. Cadastre-a no array "categorias", com um id exclusivo.
+ * 2. Informe esse id no campo "categoria" dos produtos.
+ * 3. Coloque a imagem da categoria em imagens/categorias/.
+ *
+ * Para adicionar um produto:
+ * Copie um objeto do array "produtos" e altere seus dados.
+ *
+ * preco: valor em centavos. Exemplo: 2590 = R$ 25,90.
+ * exibirPreco: true mostra o preço; false oculta.
+ * ativo: true publica; false oculta o produto.
+ * destaque: true mostra na seção de destaques.
+ * ordem: define a posição inicial dentro da listagem.
+ *
+ * imagens: caminhos relativos à pasta principal do projeto.
+ */
+
+{
+  "configuracao": {
+    "marca": "Artes da Cy",
+    "whatsapp": "5514991223869",
+    "tituloCapa": "Artes da Cy",
+    "subtituloCapa": "Peças únicas, feitas com carinho para você.",
+    "apresentacao": "Cada criação carrega cuidado, criatividade e dedicação. Descubra peças artesanais e personalizadas que tornam momentos especiais ainda mais inesquecíveis.",
+    "logo": "imagens/logo.jpg",
+    "capa": "imagens/capa.jpg"
+  },
+  "categorias": [
+    {
+      "id": "presentes",
+      "nome": "Presentes personalizados",
+      "descricao": "Presentes criados para momentos especiais.",
+      "imagem": "imagens/categoria/presentes.jpeg",
+      "ordem": 1,
+      "ativa": true
+    },
+    {
+      "id": "lembrancinhas",
+      "nome": "Lembrancinhas",
+      "descricao": "Pequenos detalhes para grandes ocasiões.",
+      "imagem": "imagens/categoria/lembrancinha.jpeg",
+      "ordem": 2,
+      "ativa": true
+    },
+    {
+      "id": "decoracao",
+      "nome": "Decoração",
+      "descricao": "Detalhes artesanais para decorar.",
+      "imagem": "imagens/categoria/decoracoes.jpeg",
+      "ordem": 3,
+      "ativa": true
+    },
+    {
+      "id": "papelaria",
+      "nome": "Papelaria personalizada",
+      "descricao": "Criatividade em cada detalhe.",
+      "imagem": "imagens/categoria/papelaria.jpeg",
+      "ordem": 4,
+      "ativa": true
+    }
+  ],
+  "produtos": [
+    {
+      "id": "produto-teste",
+      "categoria": "presentes",
+      "nome": "Produto de demonstração",
+      "descricao": "Esse arranjo é ótimo para quem quer uma decoração bonita, durável ....",
+      "medidas": "20 x 15 cm",
+      "materiais": "Papel e materiais decorativos",
+      "imagens": [
+        "imagens/produtos/arranjo-papel.jpeg",
+        "imagens/produtos/arranjo-papel1.jpeg"
+      ],
+      "preco": 2590,
+      "exibirPreco": true,
+      "destaque": true,
+      "ativo": true,
+      "ordem": 1
+    },
+    {
+  "id": "botton",
+  "categoria": "lembrancinhas",
+  "nome": "Botton de demonstração",
+  "descricao": "Exemplo para testar o catálogo.",
+  "medidas": "20 x 15 cm",
+  "materiais": "Chaveiro de plástico com decoração",
+  "tags": [
+    "botton",
+    "button",
+    "broche",
+    "chaveiro",
+    "lembrancinha",
+    "lembrancinhas personalizadas",
+    "brinde personalizado",
+    "presente",
+    "festa",
+    "aniversário",
+    "personalizado"
+  ],
+  "imagens": [
+    "imagens/produtos/botton.jpeg",
+    "imagens/produtos/botton1.jpeg"
+  ],
+  "preco": 2890,
+  "exibirPreco": true,
+  "destaque": true,
+  "ativo": true,
+  "ordem": 1
+},
+{
+  "id": "decoracao-demo",
+  "categoria": "decoracao",
+  "nome": "Peça decorativa de demonstração",
+  "descricao": "Exemplo de peça artesanal para decorar ambientes e deixar cada espaço mais especial.",
+  "medidas": "A definir",
+  "materiais": "Materiais decorativos diversos",
+  "imagens": [
+    "imagens/produtos/decoracao.jpeg",
+    "imagens/produtos/decoracao1.jpeg"
+  ],
+  "preco": 3500,
+  "exibirPreco": true,
+  "destaque": false,
+  "ativo": true,
+  "ordem": 1
+},
+{
+  "id": "papelaria-demo",
+  "categoria": "papelaria",
+  "nome": "Papelaria personalizada de demonstração",
+  "descricao": "Exemplo de criação personalizada em papel para ocasiões especiais.",
+  "medidas": "A definir",
+  "materiais": "Papel e materiais para personalização",
+  "imagens": [
+    "imagens/produtos/produto-teste.jpg",
+    "imagens/produtos/produto-teste-detalhe.jpg"
+  ],
+  "preco": 1500,
+  "exibirPreco": true,
+  "destaque": false,
+  "ativo": true,
+  "ordem": 1
+}
+
+  ]
+}

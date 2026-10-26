@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="theme-color" content="#f8f5ef">
+  <meta name="description" content="Explore os produtos artesanais e personalizados da Artes da Cy.">
+
+  <title>Categoria | Artes da Cy</title>
+
+  <link rel="stylesheet" href="css/estilo.css">
+  <link rel="stylesheet" href="css/catalogo.css">
+  <link rel="stylesheet" href="css/navbar-carrinho.css">
+
+  <script src="js/produtos.js" defer></script>
+<script src="js/app.js" defer></script>
+<script src="js/busca.js" defer></script>
+<script src="js/categoria.js" defer></script>
+<script src="js/navbar-carrinho.js" defer></script>
+</head>
+
+<body>
+
+  <header class="cabecalho">
+    <a class="marca" href="index.html">
+      <img
+        id="logoMarca"
+        class="logo-marca"
+        src="imagens/logo.png"
+        alt="Artes da Cy"
+      >
+      <span>Artes da Cy</span>
+    </a>
+
+    <nav class="menu-principal" aria-label="Navegação principal">
+      <a href="index.html#inicio">Início</a>
+      <a href="index.html#categorias">Categorias</a>
+      <a href="index.html#destaques">Destaques</a>
+      <a href="index.html#sobre">Sobre</a>
+    </nav>
+
+    <a
+      id="linkWhatsApp"
+      class="botao-contato"
+      href="https://wa.me/5514991223869"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Fale conosco
+    </a>
+  </header>
+
+  <main>
+    <nav class="caminho-pagina" aria-label="Você está aqui">
+      <a href="index.html">Início</a>
+      <span aria-hidden="true">/</span>
+      <span id="caminhoCategoria">Categoria</span>
+    </nav>
+
+    <section class="topo-categoria">
+      <span class="sobretitulo">ARTES DA CY</span>
+      <h1 id="tituloCategoria">Nossos produtos</h1>
+      <p id="descricaoCategoria">
+        Conheça nossas criações artesanais.
+      </p>
+    </section>
+
+    <section class="secao secao-listagem">
+      
+<div class="filtros-categoria">
+ <!-- <div id="buscaCategoria"></div>
+  <label class="filtro-seletor">
+    <span>Filtrar por categoria</span>
+    <select id="filtroCategoria">
+      <option value="">Todas as categorias</option>
+    </select>
+  </label>-->
+  
+<label class="filtro-seletor">
+  <span>Ordenar produtos</span>
+  <select id="ordenarProdutos">
+    <option value="ordem">Selecione a ordem</option>
+    <option value="nome">Nome: A–Z</option>
+    <option value="menor-preco">Menor preço</option>
+    <option value="maior-preco">Maior preço</option>
+  </select>
+</label>
+
+</div>
+
+      <div class="resumo-listagem">
+        <p id="quantidadeProdutos">Carregando produtos...</p>
+        <a class="link-voltar" href="index.html#categorias">
+          ← Todas as categorias
+        </a>
+      </div>
+
+      <div id="listaProdutosCategoria" class="grade-produtos">
+        <p class="mensagem-vazia">Carregando produtos...</p>
+      </div>
+
+      <div id="avisoCategoria" class="aviso-categoria" hidden>
+        <h2>Categoria não encontrada</h2>
+        <p>
+          Essa categoria pode ter sido desativada ou o endereço pode estar incorreto.
+        </p>
+        <a class="botao-principal" href="index.html#categorias">
+          Ver categorias
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <a href="index.html" class="marca-rodape">Artes da Cy</a>
+    <p>Artesanato e personalização feitos com carinho.</p>
+    <p class="creditos">
+      © <span id="anoAtual">2026</span> Artes da Cy.
+      Todos os direitos reservados.
+    </p>
+  </footer>
+
+</body>
+</html>
