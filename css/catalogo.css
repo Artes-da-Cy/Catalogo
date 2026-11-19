@@ -154,6 +154,13 @@
   font-size: 0.9rem;
 }
 
+.cartao-categoria .quantidade-produtos-categoria {
+  margin: -10px 16px 18px;
+  color: var(--destaque-escuro);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 /* GRADE DE PRODUTOS */
 
 .grade-produtos {
@@ -389,6 +396,11 @@
   .cartao-categoria p {
     margin: 0 12px 14px;
     font-size: 0.8rem;
+  }
+
+  .cartao-categoria .quantidade-produtos-categoria {
+    margin: -8px 12px 14px;
+    font-size: 0.75rem;
   }
 
   .cartao-produto-conteudo {

@@ -64,6 +64,14 @@ function renderizarCategorias() {
     const nome = app.escapar(categoria.nome);
     const descricao = app.escapar(categoria.descricao);
     const imagem = app.escapar(categoria.imagem || "");
+    const quantidadeProdutos = app.listarProdutos({
+      categoria: categoria.id
+    }).length;
+    const resumoProdutos = quantidadeProdutos === 0
+      ? "Sem produtos"
+      : `${quantidadeProdutos} ${
+        quantidadeProdutos === 1 ? "produto" : "produtos"
+      }`;
 
     return `
       <a class="cartao-categoria"
@@ -74,6 +82,7 @@ function renderizarCategorias() {
           : ""}
         <h3>${nome}</h3>
         <p>${descricao}</p>
+        <p class="quantidade-produtos-categoria">${resumoProdutos}</p>
       </a>
     `;
   }).join("");

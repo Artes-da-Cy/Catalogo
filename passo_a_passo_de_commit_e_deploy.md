@@ -7,7 +7,7 @@ Abra o CMD e execute:
 ```cmd
 cd /d "C:\Users\syssy\Documents\artesdacy"
 git add -A
-git commit -m "Descreva a alteração"
+git commit -m "novos arquivos"
 git push origin main
 ```
 
@@ -40,3 +40,7 @@ Ao terminar, confira o endereço informado pelo Wrangler ou veja a implantação
 O logo e a capa são carregados do R2 por `/api/media?key=site/...`; as imagens de categorias e produtos também vêm do catálogo no D1 e do R2. A pasta local `imagens/` serve como origem para o script de envio ao R2, mas não precisa ir para o Pages. O antigo `produtos.json` também não é usado pelo site. O deploy envia somente as páginas e as pastas `css` e `js`; as Pages Functions são compiladas de `functions/`.
 
 **Importante:** não envie `.dev.vars` nem credenciais ao GitHub. O deploy não aplica automaticamente as migrações SQL do D1. Como o projeto usa bindings remotos, alterações feitas pelo admin podem afetar os dados de produção.
+
+visualizar site localmente
+npx.cmd wrangler pages dev . --port 8788
+ctrl+C para encerrar
