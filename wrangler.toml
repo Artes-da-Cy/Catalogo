@@ -1,0 +1,15 @@
+name = "artesdacy"
+compatibility_date = "2026-10-26"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "artesdacy"
+database_id = "b70963a4-d30c-4d73-9679-c78d7a894fe4"
+migrations_dir = "migrations"
+remote = true
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "artesdacy-media"
+remote = true

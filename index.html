@@ -10,14 +10,14 @@
 
   <title>Artes da Cy | Feito com carinho</title>
 
-  <link rel="stylesheet" href="css/estilo.css">
-  <link rel="stylesheet" href="css/catalogo.css">
-  <link rel="stylesheet" href="css/navbar-carrinho.css">
+  <link rel="stylesheet" href="css/estilo.css?v=1.1.1">
+  <link rel="stylesheet" href="css/catalogo.css?v=1.1.1">
+  <link rel="stylesheet" href="css/navbar-carrinho.css?v=1.1.1">
 
-  <script src="js/produtos.js" defer></script>
-  <script src="js/app.js" defer></script>
-  <script src="js/catalogo.js" defer></script>
-  <script src="js/busca.js" defer></script>
+  <script src="js/produtos.js?v=2" defer></script>
+  <script src="js/app.js?v=2" defer></script>
+  <script src="js/catalogo.js?v=2" defer></script>
+  <script src="js/busca.js?v=2" defer></script>
   
 </head>
 
@@ -28,7 +28,7 @@
       <img
         id="logoMarca"
         class="logo-marca"
-        src="imagens/logo.jpg"
+        src="/api/media?key=site/logo.jpg"
         alt="Artes da Cy"
       >
       <span>Artes da Cy</span>
@@ -59,7 +59,7 @@
       <img
         id="imagemCapa"
         class="imagem-capa"
-        src="imagens/capa.jpg"
+        src="/api/media?key=site/capa.jpg"
         alt=""
       >
       <div class="capa-sobreposicao"></div>
@@ -102,22 +102,6 @@
 </section>-->
 
 
-    <section class="secao" id="categorias">
-      <div class="cabecalho-secao">
-        <div>
-          <span class="sobretitulo">EXPLORE NOSSO CATÁLOGO</span>
-          <h2>Nossas categorias</h2>
-          <p>Encontre a criação perfeita para cada ocasião.</p>
-        </div>
-      </div>
-
-      <div id="listaCategorias" class="grade-categorias">
-        <p class="mensagem-vazia">
-          Nossas categorias aparecerão aqui.
-        </p>
-      </div>
-    </section>
-
     <section class="secao secao-destaques" id="destaques">
       <div class="cabecalho-secao">
         <div>
@@ -130,6 +114,22 @@
       <div id="listaProdutos" class="grade-produtos">
         <p class="mensagem-vazia">
           Nossos produtos aparecerão aqui.
+        </p>
+      </div>
+    </section>
+
+    <section class="secao" id="categorias">
+      <div class="cabecalho-secao">
+        <div>
+          <span class="sobretitulo">EXPLORE NOSSO CATÁLOGO</span>
+          <h2>Nossas categorias</h2>
+          <p>Encontre a criação perfeita para cada ocasião.</p>
+        </div>
+      </div>
+
+      <div id="listaCategorias" class="grade-categorias">
+        <p class="mensagem-vazia">
+          Nossas categorias aparecerão aqui.
         </p>
       </div>
     </section>
@@ -159,39 +159,34 @@
 
     <footer class="rodape">
     <a href="#inicio" class="marca-rodape">Artes da Cy</a>
-    <p>Artesanato e personalização feitos com carinho.</p><div class="redes-sociais">
-  <a
-    class="link-rede-social"
-    href="https://www.instagram.com/atelie_artesdacy/"
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="Visite nosso Instagram"
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="5"/>
-      <circle cx="12" cy="12" r="4"/>
-      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
-    </svg>
-    <span>@atelie_artesdacy</span>
-  </a>
-</div>
-
-<p class="creditos">
-  © <span id="anoAtual">2026</span> Artes da Cy. Todos os direitos reservados.
-</p>
-
-  </footer>
+    <p>Artesanato e personalização feitos com carinho.</p>
+    <div class="redes-sociais">
+      <a
+        class="link-rede-social"
+        href="https://www.instagram.com/atelie_artesdacy/"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Visite nosso Instagram"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="4"/>
+          <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>@atelie_artesdacy</span>
+      </a>
+    </div>
     <p class="creditos">
       © <span id="anoAtual">2026</span> Artes da Cy. Todos os direitos reservados.
     </p>

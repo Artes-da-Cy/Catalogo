@@ -66,6 +66,25 @@
       margin-bottom: 16px;
     }
 
+    .painel details + details {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--borda);
+    }
+
+    .painel summary {
+      padding: 4px 0;
+      color: var(--principal);
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .painel summary:focus-visible {
+      outline: 2px solid var(--principal);
+      outline-offset: 4px;
+    }
+
     h2 {
       font-size: 19px;
       margin: 0 0 14px;
@@ -104,6 +123,14 @@
       gap: 12px;
     }
 
+    .ajuda-campo {
+      display: block;
+      margin-top: 5px;
+      color: #665a63;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
     .checks {
       display: flex;
       flex-wrap: wrap;
@@ -121,6 +148,68 @@
 
     .checks input {
       width: auto;
+    }
+
+    .seletor-imagem {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 5px;
+    }
+
+    .seletor-imagem input {
+      min-width: 0;
+    }
+
+    .previa-imagem {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 74px;
+    }
+
+    .previa-imagem:empty {
+      display: none;
+    }
+
+    .previa-imagem img {
+      width: 68px;
+      height: 68px;
+      border: 1px solid var(--borda);
+      border-radius: 8px;
+      background: var(--fundo);
+      object-fit: cover;
+    }
+
+    .item-previa-imagem {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      max-width: 100%;
+    }
+
+    .previa-imagem .legenda-previa {
+      max-width: 130px;
+      color: #665a63;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .previa-indisponivel {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 68px;
+      height: 68px;
+      padding: 5px;
+      border: 1px dashed #c9a988;
+      border-radius: 8px;
+      background: #fff3d6;
+      color: #694d13;
+      font-size: 10px;
+      text-align: center;
     }
 
     button, .botao {
@@ -203,11 +292,20 @@
       color: var(--perigo);
     }
 
+    .status.aviso {
+      background: #fff3d6;
+      color: #694d13;
+    }
+
     .oculto { display: none !important; }
 
     @media (max-width: 520px) {
       .linha { grid-template-columns: 1fr; }
       .painel { padding: 13px; }
+      .seletor-imagem {
+        align-items: flex-start;
+        flex-direction: column;
+      }
     }
   </style>
 </head>
@@ -215,28 +313,25 @@
 <body>
 <header>
   <h1>Artes da Cy</h1>
-  <p>Administração local do catálogo</p>
+  <p>Administração do catálogo</p>
+  <a class="botao" href="/api/auth/logout">Sair</a>
 </header>
 
 <main>
   <div class="aviso">
-    <strong>Modo local:</strong> as alterações ficam na memória desta página
-    até você exportar o arquivo. Mantenha uma cópia de segurança do
-    <code>produtos.json</code> original.
+    <strong>Acesso restrito.</strong> As alterações salvas neste painel são
+    gravadas no catálogo publicado.
   </div>
 
   <section class="painel">
-    <h2>1. Carregar catálogo</h2>
-    <p>Carregue o arquivo atual ou selecione um JSON exportado anteriormente.</p>
+    <h2>1. Catálogo no banco</h2>
+    <p>Os dados carregados e salvos vêm diretamente do banco D1.</p>
 
     <div class="acoes">
       <button type="button" id="carregarServidor">
-        Carregar produtos.json
+        Atualizar catálogo
       </button>
     </div>
-
-    <label for="arquivoJson">Ou selecionar arquivo JSON</label>
-    <input type="file" id="arquivoJson" accept=".json,application/json">
 
     <div id="status" class="status" role="status">
       Aguardando carregamento dos dados.
@@ -244,20 +339,21 @@
   </section>
 
   <section class="painel">
-    <h2>2. Produtos</h2>
+    <details id="listaProdutosPainel" open>
+      <summary>2. Produtos cadastrados</summary>
+      <label for="filtroProdutos">Pesquisar produto</label>
+      <input id="filtroProdutos" type="search"
+        placeholder="Digite o nome do produto...">
 
-    <label for="filtroProdutos">Pesquisar produto</label>
-    <input id="filtroProdutos" type="search"
-      placeholder="Digite o nome do produto...">
-
-    <div id="listaProdutos">
-      <p>Carregue o catálogo para visualizar os produtos.</p>
-    </div>
+      <div id="listaProdutos">
+        <p>Carregue o catálogo para visualizar os produtos.</p>
+      </div>
+    </details>
   </section>
 
   <section class="painel" id="painelFormulario">
-    <h2 id="tituloFormulario">3. Cadastrar produto</h2>
-
+    <details id="formularioProdutoPainel">
+    <summary id="tituloFormulario">3. Cadastrar produto</summary>
     <form id="formProduto">
       <input type="hidden" id="produtoOriginalId">
 
@@ -287,14 +383,16 @@
       </div>
 
       <label for="produtoImagens">
-        Caminhos das imagens (um por linha)
+        Imagens do produto (JPG, JPEG, PNG ou AVIF convertido para JPG;
+        até 300 KB cada)
       </label>
-      <textarea id="produtoImagens"
-        placeholder="imagens/produtos/caixa.jpg"></textarea>
-      <small>
-        Copie as imagens para a pasta do projeto e informe os caminhos
-        relativos. A primeira imagem será a principal.
-      </small>
+      <div class="seletor-imagem">
+        <input id="produtoImagens" type="file"
+          accept=".jpg,.jpeg,.png,.avif,image/jpeg,image/png,image/avif" multiple>
+        <div id="previasNovasImagens" class="previa-imagem"
+          aria-live="polite"></div>
+      </div>
+      <div id="listaImagensProduto" class="acoes" aria-live="polite"></div>
 
       <div class="linha">
         <div>
@@ -306,6 +404,10 @@
           <label for="produtoOrdem">Ordem de exibição</label>
           <input id="produtoOrdem" type="number" min="0"
             step="1" value="1">
+          <small class="ajuda-campo">
+            Menor número aparece primeiro; em caso de empate, os itens ficam
+            em ordem alfabética.
+          </small>
         </div>
       </div>
 
@@ -324,14 +426,17 @@
           id="cancelarEdicao">Limpar formulário</button>
       </div>
     </form>
+    </details>
   </section>
 
   <section class="painel">
-    <h2>4. Categorias</h2>
+    <details id="listaCategoriasPainel" open>
+      <summary>4. Categorias cadastradas</summary>
+      <div id="listaCategorias"></div>
+    </details>
 
-    <div id="listaCategorias"></div>
-
-    <h3 id="tituloCategoria">Cadastrar categoria</h3>
+    <details id="formularioCategoriaPainel">
+    <summary id="tituloCategoria">Cadastrar categoria</summary>
     <form id="formCategoria">
       <input type="hidden" id="categoriaOriginalId">
 
@@ -345,13 +450,24 @@
       <label for="categoriaDescricao">Descrição</label>
       <textarea id="categoriaDescricao"></textarea>
 
-      <label for="categoriaImagem">Caminho da imagem</label>
-      <input id="categoriaImagem"
-        placeholder="imagens/categorias/festas.jpg">
+      <label for="categoriaImagem">
+        Imagem da categoria (JPG, JPEG, PNG ou AVIF convertido para JPG;
+        até 300 KB)
+      </label>
+      <div class="seletor-imagem">
+        <input id="categoriaImagem" type="file"
+          accept=".jpg,.jpeg,.png,.avif,image/jpeg,image/png,image/avif">
+        <div id="previewImagemCategoria" class="previa-imagem"
+          aria-live="polite"></div>
+      </div>
 
       <label for="categoriaOrdem">Ordem de exibição</label>
       <input id="categoriaOrdem" type="number"
         min="0" step="1" value="1">
+      <small class="ajuda-campo">
+        Menor número aparece primeiro; em caso de empate, as categorias ficam
+        em ordem alfabética.
+      </small>
 
       <div class="checks">
         <label><input id="categoriaAtiva" type="checkbox" checked>
@@ -364,26 +480,20 @@
           id="cancelarCategoria">Limpar formulário</button>
       </div>
     </form>
+    </details>
   </section>
 
-  <section class="painel">
-    <h2>5. Exportar catálogo</h2>
-    <p>
-      Gere um novo <code>produtos.json</code> com as alterações.
-      O arquivo original não será sobrescrito automaticamente.
-    </p>
-    <div class="acoes">
-      <button type="button" id="exportarJson">
-        Exportar produtos.json
-      </button>
-    </div>
-  </section>
 </main>
 
 <script>
 "use strict";
 
 let dados = null;
+let imagensProduto = [];
+let novasImagensProduto = [];
+let imagemCategoria = "";
+let novaImagemCategoria = null;
+const TAMANHO_MAXIMO_IMAGEM = 300 * 1000;
 
 const $ = id => document.getElementById(id);
 
@@ -428,105 +538,387 @@ function validarDados(objeto) {
 }
 
 async function carregarJsonServidor() {
-  mostrarStatus("Carregando produtos.json...");
+  mostrarStatus("Carregando catálogo do banco D1...");
 
   try {
-    const resposta = await fetch("./produtos.json", {
+    const resposta = await fetch("/api/admin/catalog", {
       cache: "no-store"
     });
 
-    if (!resposta.ok) {
-      throw new Error("Não foi possível abrir produtos.json (" +
-        resposta.status + ").");
+    if (resposta.status === 401) {
+      window.location.href = "/api/auth/login?returnTo=%2Fadmin.html";
+      return;
     }
 
-    const texto = await resposta.text();
-    dados = validarDados(JSON.parse(removerComentarios(texto)));
+    if (!resposta.ok) {
+      const resultado = await resposta.json().catch(() => ({}));
+      throw new Error(resultado.error ||
+        "Não foi possível carregar o banco D1 (" + resposta.status + ").");
+    }
+
+    dados = validarDados(await resposta.json());
 
     atualizarInterface();
-    mostrarStatus("Catálogo carregado. " +
+    mostrarStatus("Catálogo atualizado do D1. " +
       dados.produtos.length + " produto(s) e " +
       dados.categorias.length + " categoria(s).", "sucesso");
   } catch (erro) {
-    mostrarStatus(
-      "Não foi possível carregar automaticamente. " +
-      "Se estiver abrindo o HTML como arquivo local, selecione " +
-      "produtos.json no campo de arquivo. Detalhe: " + erro.message,
-      "erro"
-    );
+    mostrarStatus("Não foi possível carregar o catálogo do D1: " +
+      erro.message, "erro");
   }
 }
 
-function removerComentarios(texto) {
-  let resultado = "";
-  let dentroString = false;
-  let escape = false;
+async function enviarParaApi(url, opcoes = {}) {
+  const resposta = await fetch(url, {
+    ...opcoes,
+    headers: {
+      ...(opcoes.body ? { "content-type": "application/json" } : {}),
+      ...opcoes.headers
+    },
+    cache: "no-store"
+  });
+  const resultado = await resposta.json().catch(() => ({}));
 
-  for (let i = 0; i < texto.length; i++) {
-    const c = texto[i];
-    const proximo = texto[i + 1];
-
-    if (dentroString) {
-      resultado += c;
-
-      if (escape) {
-        escape = false;
-      } else if (c === "\\") {
-        escape = true;
-      } else if (c === '"') {
-        dentroString = false;
-      }
-      continue;
-    }
-
-    if (c === '"') {
-      dentroString = true;
-      resultado += c;
-      continue;
-    }
-
-    if (c === "/" && proximo === "*") {
-      i += 2;
-      while (i < texto.length &&
-        !(texto[i] === "*" && texto[i + 1] === "/")) i++;
-      i++;
-      resultado += "\n";
-      continue;
-    }
-
-    if (c === "/" && proximo === "/") {
-      while (i < texto.length && texto[i] !== "\n") i++;
-      resultado += "\n";
-      continue;
-    }
-
-    resultado += c;
+  if (resposta.status === 401) {
+    window.location.href = "/api/auth/login?returnTo=%2Fadmin.html";
+    throw new Error("Sessão encerrada. Faça login novamente.");
+  }
+  if (!resposta.ok) {
+    throw new Error(resultado.error || "A operação não foi concluída.");
   }
 
   return resultado;
 }
 
-$("carregarServidor").addEventListener("click", carregarJsonServidor);
+function blobDoCanvas(canvas, tipo, qualidade) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error("O navegador não conseguiu processar a imagem."));
+      }
+    }, tipo, qualidade);
+  });
+}
 
-$("arquivoJson").addEventListener("change", async evento => {
-  const arquivo = evento.target.files[0];
-  if (!arquivo) return;
+async function tipoImagem(arquivo) {
+  const assinatura = new Uint8Array(
+    await arquivo.slice(0, 12).arrayBuffer()
+  );
+  const jpeg = assinatura.length >= 3 &&
+    assinatura[0] === 0xff &&
+    assinatura[1] === 0xd8 &&
+    assinatura[2] === 0xff;
+  const png = assinatura.length >= 8 &&
+    assinatura[0] === 0x89 &&
+    assinatura[1] === 0x50 &&
+    assinatura[2] === 0x4e &&
+    assinatura[3] === 0x47 &&
+    assinatura[4] === 0x0d &&
+    assinatura[5] === 0x0a &&
+    assinatura[6] === 0x1a &&
+    assinatura[7] === 0x0a;
+  const avif = assinatura.length >= 12 &&
+    assinatura[4] === 0x66 &&
+    assinatura[5] === 0x74 &&
+    assinatura[6] === 0x79 &&
+    assinatura[7] === 0x70 &&
+    (String.fromCharCode(...assinatura.slice(8, 12)) === "avif" ||
+      String.fromCharCode(...assinatura.slice(8, 12)) === "avis");
+
+  if (jpeg) return "image/jpeg";
+  if (png) return "image/png";
+  if (avif) return "image/avif";
+
+  throw new Error(
+    "Imagem não compatível: selecione JPG, PNG ou AVIF. " +
+    "AVIF será convertido para JPG."
+  );
+}
+
+async function prepararImagem(arquivo) {
+  const tipo = await tipoImagem(arquivo);
+  if (arquivo.size <= TAMANHO_MAXIMO_IMAGEM && tipo !== "image/avif") {
+    return arquivo;
+  }
+
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(arquivo);
+  } catch {
+    throw new Error(
+      "Imagem não compatível: não foi possível abrir este arquivo. " +
+      "Tente uma imagem JPG, PNG ou AVIF."
+    );
+  }
 
   try {
-    const texto = await arquivo.text();
-    dados = validarDados(JSON.parse(removerComentarios(texto)));
-    atualizarInterface();
+    const tipoSaida = tipo === "image/png" ? "image/png" : "image/jpeg";
+    let escala = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    const qualidades = tipoSaida === "image/jpeg"
+      ? [0.88, 0.78, 0.68, 0.58, 0.48]
+      : [undefined];
 
-    mostrarStatus(
-      "Arquivo carregado: " + arquivo.name + ".",
-      "sucesso"
+    for (let tentativa = 0; tentativa < 12; tentativa++) {
+      canvas.width = Math.max(1, Math.round(bitmap.width * escala));
+      canvas.height = Math.max(1, Math.round(bitmap.height * escala));
+      const contexto = canvas.getContext("2d");
+      if (!contexto) throw new Error("Não foi possível preparar a imagem.");
+      contexto.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+      for (const qualidade of qualidades) {
+        const blob = await blobDoCanvas(canvas, tipoSaida, qualidade);
+        if (blob.size <= TAMANHO_MAXIMO_IMAGEM) {
+          const extensao = tipoSaida === "image/png" ? "png" : "jpg";
+          const nome = arquivo.name.replace(/\.[^.]+$/, "");
+          return new File([blob], `${nome}.${extensao}`, {
+            type: tipoSaida,
+            lastModified: Date.now()
+          });
+        }
+      }
+
+      escala *= 0.8;
+    }
+
+    throw new Error(
+      "A imagem continua acima de 300 KB após a otimização. " +
+      "Reduza as dimensões ou exporte-a com mais compressão."
     );
-  } catch (erro) {
-    mostrarStatus("Erro ao ler o arquivo: " + erro.message, "erro");
+  } finally {
+    bitmap.close();
+  }
+}
+
+async function enviarImagem(arquivo, area) {
+  const imagem = await prepararImagem(arquivo);
+  const tipo = await tipoImagem(imagem);
+  const resposta = await fetch(`/api/media?area=${area}`, {
+    method: "POST",
+    headers: { "content-type": tipo },
+    body: imagem,
+    cache: "no-store"
+  });
+  const resultado = await resposta.json().catch(() => ({}));
+
+  if (resposta.status === 401) {
+    window.location.href = "/api/auth/login?returnTo=%2Fadmin.html";
+    throw new Error("Sessão encerrada. Faça login novamente.");
+  }
+  if (!resposta.ok) {
+    throw new Error(resultado.error || "Não foi possível enviar a imagem.");
+  }
+
+  return resultado.url;
+}
+
+function renderizarImagensProduto() {
+  const container = $("listaImagensProduto");
+  container.replaceChildren();
+
+  imagensProduto.forEach((imagem, indice) => {
+    const grupo = document.createElement("div");
+    grupo.className = "produto";
+
+    const preview = document.createElement("img");
+    preview.src = imagem;
+    preview.alt = `Imagem ${indice + 1} do produto`;
+    preview.style.width = "100px";
+    preview.style.height = "100px";
+    preview.style.objectFit = "cover";
+    preview.addEventListener("error", () => {
+      mostrarPreviaIndisponivel(preview);
+    }, { once: true });
+
+    const remover = document.createElement("button");
+    remover.type = "button";
+    remover.className = "perigo";
+    remover.textContent = "Remover imagem";
+    remover.addEventListener("click", () => {
+      imagensProduto.splice(indice, 1);
+      renderizarImagensProduto();
+    });
+
+    grupo.append(preview, remover);
+    container.appendChild(grupo);
+  });
+}
+
+function renderizarImagemCategoria() {
+  const preview = $("previewImagemCategoria");
+  preview.replaceChildren();
+  if (!imagemCategoria) return;
+
+  const imagem = document.createElement("img");
+  imagem.src = imagemCategoria;
+  imagem.alt = "Imagem atual da categoria";
+  imagem.addEventListener("error", () => {
+    mostrarPreviaIndisponivel(imagem);
+  }, { once: true });
+  preview.appendChild(imagem);
+}
+
+function mostrarPreviaIndisponivel(imagem) {
+  const indisponivel = document.createElement("span");
+  indisponivel.className = "previa-indisponivel";
+  indisponivel.textContent = "Prévia indisponível";
+  imagem.replaceWith(indisponivel);
+}
+
+function limparFilaImagensProduto() {
+  novasImagensProduto.forEach(imagem => {
+    URL.revokeObjectURL(imagem.previewUrl);
+  });
+  novasImagensProduto = [];
+  $("previasNovasImagens").replaceChildren();
+  $("produtoImagens").value = "";
+}
+
+function limparNovaImagemCategoria() {
+  if (novaImagemCategoria?.previewUrl) {
+    URL.revokeObjectURL(novaImagemCategoria.previewUrl);
+  }
+  novaImagemCategoria = null;
+  $("previewImagemCategoria").replaceChildren();
+  $("categoriaImagem").value = "";
+}
+
+function criarPreviaNovaImagem(arquivo, container, aoRemover) {
+  const url = URL.createObjectURL(arquivo);
+
+  const imagem = document.createElement("img");
+  imagem.alt = `Prévia de ${arquivo.name}`;
+  const legenda = document.createElement("span");
+  legenda.className = "legenda-previa";
+  legenda.textContent = arquivo.name;
+
+  const item = document.createElement("div");
+  item.className = "item-previa-imagem";
+  item.append(imagem, legenda);
+
+  if (aoRemover) {
+    const remover = document.createElement("button");
+    remover.type = "button";
+    remover.className = "secundario";
+    remover.textContent = "Remover seleção";
+    remover.addEventListener("click", () => {
+      aoRemover();
+      URL.revokeObjectURL(url);
+      item.remove();
+    });
+    item.appendChild(remover);
+  }
+
+  imagem.onerror = () => {
+    mostrarPreviaIndisponivel(imagem);
+  };
+
+  container.appendChild(item);
+  imagem.src = url;
+
+  return url;
+}
+
+function selecionarImagensProduto(evento) {
+  const arquivos = Array.from(evento.target.files || []);
+  if (!arquivos.length) return;
+
+  const containerPrevia = $("previasNovasImagens");
+  for (const arquivo of arquivos) {
+    const novaImagem = { arquivo, previewUrl: "", urlR2: "" };
+    novaImagem.previewUrl = criarPreviaNovaImagem(
+      arquivo,
+      containerPrevia,
+      () => {
+        novasImagensProduto = novasImagensProduto.filter(
+          imagem => imagem !== novaImagem
+        );
+      }
+    );
+    novasImagensProduto.push(novaImagem);
   }
 
   evento.target.value = "";
-});
+  mostrarStatus(
+    "Prévia pronta. As imagens serão enviadas ao R2 ao salvar o produto.",
+    "sucesso"
+  );
+}
+
+function selecionarImagemCategoria(evento) {
+  const arquivo = evento.target.files?.[0];
+  if (!arquivo) return;
+
+  const containerPrevia = $("previewImagemCategoria");
+  limparNovaImagemCategoria();
+  const novaImagem = { arquivo, previewUrl: "", urlR2: "" };
+  novaImagem.previewUrl = criarPreviaNovaImagem(
+    arquivo,
+    containerPrevia,
+    () => {
+      if (novaImagemCategoria === novaImagem) {
+        novaImagemCategoria = null;
+      }
+    }
+  );
+  novaImagemCategoria = novaImagem;
+  evento.target.value = "";
+  mostrarStatus(
+    "Prévia pronta. A imagem será enviada ao R2 ao salvar a categoria.",
+    "sucesso"
+  );
+}
+
+async function salvarNoBanco(tipo, registro, idOriginal) {
+  const urlBase = tipo === "produto"
+    ? "/api/admin/products"
+    : "/api/admin/categories";
+  const editar = Boolean(idOriginal);
+  const url = editar
+    ? `${urlBase}?id=${encodeURIComponent(idOriginal)}`
+    : urlBase;
+
+  await enviarParaApi(url, {
+    method: editar ? "PUT" : "POST",
+    body: JSON.stringify(registro)
+  });
+  await carregarJsonServidor();
+}
+
+$("carregarServidor").addEventListener("click", carregarJsonServidor);
+
+$("produtoImagens").addEventListener("change", selecionarImagensProduto);
+$("categoriaImagem").addEventListener("change", selecionarImagemCategoria);
+
+const gruposPainel = [
+  ["listaProdutosPainel", "formularioProdutoPainel"],
+  ["listaCategoriasPainel", "formularioCategoriaPainel"]
+];
+
+function configurarPainelExclusivo(ids) {
+  ids.forEach(id => {
+    const painel = $(id);
+    painel.addEventListener("toggle", () => {
+      if (!painel.open) return;
+      ids.filter(outroId => outroId !== id)
+        .forEach(outroId => { $(outroId).open = false; });
+    });
+  });
+}
+
+function abrirPainel(id) {
+  const painel = $(id);
+  const grupo = gruposPainel.find(ids => ids.includes(id));
+  if (grupo) {
+    grupo.filter(outroId => outroId !== id)
+      .forEach(outroId => { $(outroId).open = false; });
+  }
+  painel.open = true;
+}
+
+gruposPainel.forEach(configurarPainelExclusivo);
 
 function atualizarInterface() {
   renderizarProdutos();
@@ -607,36 +999,45 @@ function editarProduto(id) {
   const p = dados.produtos.find(item => item.id === id);
   if (!p) return;
 
+  limparFilaImagensProduto();
   $("tituloFormulario").textContent = "Editar produto";
   $("produtoOriginalId").value = p.id;
+  $("salvarProduto").textContent = "Salvar alterações";
   $("produtoId").value = p.id;
   $("produtoNome").value = p.nome || "";
   $("produtoCategoria").value = p.categoria || "";
   $("produtoDescricao").value = p.descricao || "";
   $("produtoMedidas").value = p.medidas || "";
   $("produtoMateriais").value = p.materiais || "";
-  $("produtoImagens").value = (p.imagens || []).join("\n");
+  imagensProduto = [...(p.imagens || [])];
+  renderizarImagensProduto();
   $("produtoPreco").value = (Number(p.preco || 0) / 100).toFixed(2);
   $("produtoOrdem").value = Number(p.ordem || 1);
   $("produtoExibirPreco").checked = p.exibirPreco !== false;
   $("produtoDestaque").checked = p.destaque === true;
   $("produtoAtivo").checked = p.ativo !== false;
 
+  abrirPainel("formularioProdutoPainel");
   $("painelFormulario").scrollIntoView({ behavior: "smooth" });
 }
 
 function limparFormularioProduto() {
   $("formProduto").reset();
+  limparFilaImagensProduto();
+  imagensProduto = [];
+  renderizarImagensProduto();
   $("produtoOriginalId").value = "";
   $("produtoOrdem").value = "1";
+  $("salvarProduto").textContent = "Salvar produto";
   $("tituloFormulario").textContent = "3. Cadastrar produto";
   $("produtoExibirPreco").checked = true;
   $("produtoAtivo").checked = true;
+  abrirPainel("listaProdutosPainel");
 }
 
 $("cancelarEdicao").addEventListener("click", limparFormularioProduto);
 
-$("formProduto").addEventListener("submit", evento => {
+$("formProduto").addEventListener("submit", async evento => {
   evento.preventDefault();
   if (!dados) return alert("Carregue primeiro o catálogo.");
 
@@ -665,8 +1066,10 @@ $("formProduto").addEventListener("submit", evento => {
     descricao: $("produtoDescricao").value.trim(),
     medidas: $("produtoMedidas").value.trim(),
     materiais: $("produtoMateriais").value.trim(),
-    imagens: $("produtoImagens").value
-      .split("\n").map(s => s.trim()).filter(Boolean),
+    tags: originalId
+      ? (dados.produtos.find(p => p.id === originalId)?.tags || [])
+      : [],
+    imagens: [...imagensProduto],
     preco: Math.round(precoReais * 100),
     exibirPreco: $("produtoExibirPreco").checked,
     destaque: $("produtoDestaque").checked,
@@ -674,34 +1077,42 @@ $("formProduto").addEventListener("submit", evento => {
     ordem: Math.max(0, Number($("produtoOrdem").value || 1))
   };
 
-  if (originalId) {
-    const indice = dados.produtos.findIndex(p => p.id === originalId);
-    if (indice < 0) return alert("Produto original não encontrado.");
-    dados.produtos[indice] = produto;
-  } else {
-    dados.produtos.push(produto);
-  }
+  const botaoSalvar = $("salvarProduto");
+  botaoSalvar.disabled = true;
+  try {
+    for (const novaImagem of novasImagensProduto) {
+      if (!novaImagem.urlR2) {
+        mostrarStatus(`Enviando ${novaImagem.arquivo.name} ao R2...`);
+        novaImagem.urlR2 = await enviarImagem(novaImagem.arquivo, "products");
+      }
+      produto.imagens.push(novaImagem.urlR2);
+    }
 
-  limparFormularioProduto();
-  atualizarInterface();
-  mostrarStatus(
-    "Produto salvo nesta sessão. Exporte o JSON para guardar as alterações.",
-    "sucesso"
-  );
+    await salvarNoBanco("produto", produto, originalId);
+    limparFormularioProduto();
+    mostrarStatus("Produto salvo no banco D1.", "sucesso");
+  } catch (erro) {
+    mostrarStatus("Não foi possível salvar o produto: " + erro.message, "erro");
+  } finally {
+    botaoSalvar.disabled = false;
+  }
 });
 
-function excluirProduto(id) {
+async function excluirProduto(id) {
   const p = dados.produtos.find(item => item.id === id);
   if (!p) return;
 
   if (!confirm(`Excluir o produto "${p.nome}"?`)) return;
 
-  dados.produtos = dados.produtos.filter(item => item.id !== id);
-  atualizarInterface();
-  mostrarStatus(
-    "Produto excluído desta sessão. Exporte o JSON para guardar a alteração.",
-    "sucesso"
-  );
+  try {
+    await enviarParaApi(`/api/admin/products?id=${encodeURIComponent(id)}`, {
+      method: "DELETE"
+    });
+    await carregarJsonServidor();
+    mostrarStatus("Produto excluído do banco D1.", "sucesso");
+  } catch (erro) {
+    mostrarStatus("Não foi possível excluir o produto: " + erro.message, "erro");
+  }
 }
 
 function renderizarCategorias() {
@@ -742,28 +1153,36 @@ function editarCategoria(id) {
   const c = dados.categorias.find(item => item.id === id);
   if (!c) return;
 
+  limparNovaImagemCategoria();
   $("tituloCategoria").textContent = "Editar categoria";
   $("categoriaOriginalId").value = c.id;
   $("categoriaId").value = c.id;
   $("categoriaNome").value = c.nome || "";
   $("categoriaDescricao").value = c.descricao || "";
-  $("categoriaImagem").value = c.imagem || "";
+  imagemCategoria = c.imagem || "";
+  $("categoriaImagem").value = "";
+  renderizarImagemCategoria();
   $("categoriaOrdem").value = Number(c.ordem || 1);
   $("categoriaAtiva").checked = c.ativa !== false;
+  abrirPainel("formularioCategoriaPainel");
   $("formCategoria").scrollIntoView({ behavior: "smooth" });
 }
 
 function limparFormularioCategoria() {
   $("formCategoria").reset();
+  limparNovaImagemCategoria();
+  imagemCategoria = "";
+  renderizarImagemCategoria();
   $("categoriaOriginalId").value = "";
   $("categoriaOrdem").value = "1";
   $("categoriaAtiva").checked = true;
   $("tituloCategoria").textContent = "Cadastrar categoria";
+  abrirPainel("listaCategoriasPainel");
 }
 
 $("cancelarCategoria").addEventListener("click", limparFormularioCategoria);
 
-$("formCategoria").addEventListener("submit", evento => {
+$("formCategoria").addEventListener("submit", async evento => {
   evento.preventDefault();
   if (!dados) return alert("Carregue primeiro o catálogo.");
 
@@ -788,24 +1207,40 @@ $("formCategoria").addEventListener("submit", evento => {
     id,
     nome: $("categoriaNome").value.trim(),
     descricao: $("categoriaDescricao").value.trim(),
-    imagem: $("categoriaImagem").value.trim(),
+    imagem: imagemCategoria,
     ordem: Math.max(0, Number($("categoriaOrdem").value || 1)),
     ativa: $("categoriaAtiva").checked
   };
 
-  if (originalId) {
-    const indice = dados.categorias.findIndex(c => c.id === originalId);
-    dados.categorias[indice] = categoria;
-  } else {
-    dados.categorias.push(categoria);
-  }
+  const botaoSalvar = $("formCategoria").querySelector(
+    'button[type="submit"]'
+  );
+  botaoSalvar.disabled = true;
+  try {
+    if (novaImagemCategoria) {
+      if (!novaImagemCategoria.urlR2) {
+        mostrarStatus(
+          `Enviando ${novaImagemCategoria.arquivo.name} ao R2...`
+        );
+        novaImagemCategoria.urlR2 = await enviarImagem(
+          novaImagemCategoria.arquivo,
+          "categories"
+        );
+      }
+      categoria.imagem = novaImagemCategoria.urlR2;
+    }
 
-  limparFormularioCategoria();
-  atualizarInterface();
-  mostrarStatus("Categoria salva. Exporte o JSON para guardar a alteração.", "sucesso");
+    await salvarNoBanco("categoria", categoria, originalId);
+    limparFormularioCategoria();
+    mostrarStatus("Categoria salva no banco D1.", "sucesso");
+  } catch (erro) {
+    mostrarStatus("Não foi possível salvar a categoria: " + erro.message, "erro");
+  } finally {
+    botaoSalvar.disabled = false;
+  }
 });
 
-function excluirCategoria(id) {
+async function excluirCategoria(id) {
   const categoria = dados.categorias.find(c => c.id === id);
   if (!categoria) return;
 
@@ -820,35 +1255,18 @@ function excluirCategoria(id) {
 
   if (!confirm(`Excluir a categoria "${categoria.nome}"?`)) return;
 
-  dados.categorias = dados.categorias.filter(c => c.id !== id);
-  atualizarInterface();
-  mostrarStatus("Categoria excluída. Exporte o JSON para guardar a alteração.", "sucesso");
+  try {
+    await enviarParaApi(`/api/admin/categories?id=${encodeURIComponent(id)}`, {
+      method: "DELETE"
+    });
+    await carregarJsonServidor();
+    mostrarStatus("Categoria excluída do banco D1.", "sucesso");
+  } catch (erro) {
+    mostrarStatus("Não foi possível excluir a categoria: " + erro.message, "erro");
+  }
 }
 
-$("exportarJson").addEventListener("click", () => {
-  if (!dados) return alert("Carregue primeiro o catálogo.");
-
-  const conteudo = JSON.stringify(dados, null, 2);
-  const blob = new Blob([conteudo], {
-    type: "application/json;charset=utf-8"
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = "produtos.json";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-  mostrarStatus(
-    "Arquivo produtos.json exportado. Substitua o JSON antigo no projeto " +
-    "e teste o catálogo antes de publicar.",
-    "sucesso"
-  );
-});
+carregarJsonServidor();
 </script>
 </body>
 </html>
