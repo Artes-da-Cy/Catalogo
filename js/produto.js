@@ -59,6 +59,7 @@ function iniciarPaginaProduto() {
   mostrarEspecificacao("Materiais", produto.materiais, "linhaMateriais", "materiaisProduto");
   montarGaleria(produto);
 configurarWhatsApp(produto);
+configurarCompartilhamento(produto);
 configurarCarrinho(produto);
 mostrarOutrosProdutos(produto);
 }
@@ -182,6 +183,43 @@ function configurarWhatsApp(produto) {
     "Poderia me passar mais informações sobre disponibilidade e personalização?";
 
   botao.href = app.linkWhatsApp(mensagem);
+}
+
+function configurarCompartilhamento(produto) {
+  const botao = document.getElementById("compartilharProduto");
+  const botaoWhatsApp = document.getElementById("compartilharWhatsApp");
+  const mensagem = document.getElementById("mensagemCompartilhamento");
+  const url = window.location.href;
+
+  if (botaoWhatsApp) {
+    botaoWhatsApp.href =
+      `https://wa.me/?text=${encodeURIComponent(`${produto.nome} - ${url}`)}`;
+  }
+
+  if (!botao || !mensagem) return;
+
+  botao.addEventListener("click", async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: document.title,
+          text: produto.nome,
+          url
+        });
+        mensagem.textContent = "Produto compartilhado.";
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        mensagem.textContent = "Link do produto copiado.";
+      } else {
+        window.prompt("Copie o link do produto:", url);
+      }
+    } catch (erro) {
+      if (erro.name !== "AbortError") {
+        mensagem.textContent =
+          "Não foi possível compartilhar automaticamente. Tente pelo WhatsApp.";
+      }
+    }
+  });
 }
 
 function mostrarOutrosProdutos(produtoAtual) {
@@ -328,4 +366,3 @@ function configurarCarrinho(produto) {
     quantidade.value = "1";
   });
 }
-

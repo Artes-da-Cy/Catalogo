@@ -10,15 +10,14 @@
 
   <title>Produto | Artes da Cy</title>
 
-  <link rel="stylesheet" href="css/estilo.css">
-  <link rel="stylesheet" href="css/catalogo.css">
+  <link rel="stylesheet" href="css/estilo.css?v=1.1.1">
+  <link rel="stylesheet" href="css/catalogo.css?v=1.1.2">
 
-<CodeBlock language="html" editable>
-<script src="js/produtos.js" defer></script>
-<script src="js/app.js" defer></script>
-<script src="js/busca.js" defer></script>
-<script src="js/carrinho.js" defer></script>
-<script src="js/produto.js" defer></script>
+<script src="js/produtos.js?v=1.0.0" defer></script>
+<script src="js/app.js?v=1.0.0" defer></script>
+<script src="js/busca.js?v=1.0.0" defer></script>
+<script src="js/carrinho.js?v=1.0.0" defer></script>
+<script src="js/produto.js?v=1.1.0" defer></script>
 </head>
 
 <body>
@@ -28,7 +27,7 @@
       <img
         id="logoMarca"
         class="logo-marca"
-        src="imagens/logo.png"
+        src="/api/media?key=site/logo.jpg"
         alt="Artes da Cy"
       >
       <span>Artes da Cy</span>
@@ -163,6 +162,25 @@
           Entre em contato para consultar disponibilidade,
           personalização e prazo de produção.
         </p>
+
+        <div class="compartilhar-produto">
+          <p>Gostou? Compartilhe esta criação.</p>
+          <div class="acoes-compartilhamento">
+            <button id="compartilharProduto" class="botao-principal" type="button">
+              Compartilhar
+            </button>
+            <a
+              id="compartilharWhatsApp"
+              class="botao-contato botao-whatsapp-compartilhar"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Enviar pelo WhatsApp
+            </a>
+          </div>
+          <p id="mensagemCompartilhamento" role="status" aria-live="polite"></p>
+        </div>
       </div>
 
     </section>
