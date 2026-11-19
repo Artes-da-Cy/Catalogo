@@ -26,6 +26,7 @@
 
   function salvarCarrinho(itens) {
     localStorage.setItem(CHAVE_CARRINHO, JSON.stringify(itens));
+    window.dispatchEvent(new Event("artesDaCyCarrinhoAtualizado"));
   }
 
   function adicionar(id, quantidade = 1) {
@@ -89,6 +90,7 @@
 
   function limpar() {
     localStorage.removeItem(CHAVE_CARRINHO);
+    window.dispatchEvent(new Event("artesDaCyCarrinhoAtualizado"));
   }
 
   function listar() {
@@ -96,29 +98,35 @@
 
     if (!app) return [];
 
-    return lerCarrinho()
-      .map(item => {
-        const produto = app.buscarProduto(item.id);
+    const itens = lerCarrinho();
+    const itensValidos = [];
+    const produtos = [];
 
-        if (!produto || produto.ativo !== true) {
-          return null;
-        }
+    itens.forEach(item => {
+      const produto = app.buscarProduto(item.id);
+      if (!produto || produto.ativo !== true) return;
 
-        return {
-          id: produto.id,
-          nome: produto.nome,
-          preco: produto.preco,
-          exibirPreco: produto.exibirPreco === true,
-          quantidade: item.quantidade,
-          subtotal:
-            produto.exibirPreco === true &&
-            produto.preco !== null &&
-            produto.preco !== undefined
-              ? Number(produto.preco) * item.quantidade
-              : null
-        };
-      })
-      .filter(Boolean);
+      itensValidos.push(item);
+      produtos.push({
+        id: produto.id,
+        nome: produto.nome,
+        preco: produto.preco,
+        exibirPreco: produto.exibirPreco === true,
+        quantidade: item.quantidade,
+        subtotal:
+          produto.exibirPreco === true &&
+          produto.preco !== null &&
+          produto.preco !== undefined
+            ? Number(produto.preco) * item.quantidade
+            : null
+      });
+    });
+
+    if (itensValidos.length !== itens.length) {
+      salvarCarrinho(itensValidos);
+    }
+
+    return produtos;
   }
 
   function contarItens() {

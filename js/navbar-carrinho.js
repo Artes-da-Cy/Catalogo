@@ -4,31 +4,49 @@
 
   const CHAVE_CARRINHO = "artesDaCy_carrinho";
 
-  function contarUnidades() {
+  function lerItens() {
     try {
       const itens = JSON.parse(
         localStorage.getItem(CHAVE_CARRINHO) || "[]"
       );
 
-      if (!Array.isArray(itens)) return 0;
+      if (!Array.isArray(itens)) return [];
 
-      return itens.reduce((total, item) => {
-        const quantidade = Number(item.quantidade);
-
-        if (
+      return itens.filter(item =>
+        item &&
           typeof item.id === "string" &&
-          Number.isSafeInteger(quantidade) &&
-          quantidade > 0
-        ) {
-          return total + quantidade;
-        }
-
-        return total;
-      }, 0);
+          Number.isInteger(item.quantidade) &&
+          item.quantidade > 0
+      );
     } catch (erro) {
       console.error("Erro ao consultar o carrinho:", erro);
-      return 0;
+      return [];
     }
+  }
+
+  function obterItensValidos() {
+    const itens = lerItens();
+    const app = window.ArtesDaCy;
+
+    if (!app) return itens;
+
+    const validos = itens.filter(item => {
+      const produto = app.buscarProduto(item.id);
+      return produto && produto.ativo === true;
+    });
+
+    if (validos.length !== itens.length) {
+      localStorage.setItem(CHAVE_CARRINHO, JSON.stringify(validos));
+    }
+
+    return validos;
+  }
+
+  function contarUnidades() {
+    return obterItensValidos().reduce(
+      (total, item) => total + item.quantidade,
+      0
+    );
   }
 
   function criarBotao() {
@@ -82,6 +100,14 @@
       "artesDaCyCarrinhoAtualizado",
       atualizarContador
     );
+
+    if (window.CATALOGO_PROMISE) {
+      window.CATALOGO_PROMISE
+        .then(atualizarContador)
+        .catch(erro => {
+          console.error("Não foi possível validar o carrinho:", erro);
+        });
+    }
   }
 
   if (document.readyState === "loading") {
