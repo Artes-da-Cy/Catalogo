@@ -100,6 +100,30 @@ export async function onRequestDelete(context) {
   }
 
   try {
+    const productCount = await context.env.DB.prepare(`
+      SELECT COUNT(*) AS quantity
+      FROM products
+      WHERE category_id = ?
+    `).bind(id).first();
+
+    if (!productCount) {
+      return jsonResponse({
+        error: "Não foi possível verificar os produtos desta categoria."
+      }, 500);
+    }
+
+    const quantity = Number(productCount.quantity);
+    if (quantity > 0) {
+      const message = quantity === 1
+        ? "Exclua o produto ou altere a categoria dele primeiro."
+        : "Exclua os produtos ou altere a categoria deles primeiro.";
+      const noun = quantity === 1 ? "produto vinculado" : "produtos vinculados";
+
+      return jsonResponse({
+        error: `Não é possível excluir esta categoria: há ${quantity} ${noun}. ${message}`
+      }, 409);
+    }
+
     const result = await context.env.DB.prepare(
       "DELETE FROM categories WHERE id = ?"
     ).bind(id).run();

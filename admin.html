@@ -1247,9 +1247,16 @@ async function excluirCategoria(id) {
   const quantidade = dados.produtos.filter(p => p.categoria === id).length;
 
   if (quantidade > 0) {
+    const mensagem = quantidade === 1
+      ? "Exclua o produto ou altere a categoria dele primeiro."
+      : "Exclua os produtos ou altere a categoria deles primeiro.";
+    const substantivo = quantidade === 1
+      ? "produto vinculado"
+      : "produtos vinculados";
+
     return alert(
-      `Não é possível excluir esta categoria: há ${quantidade} produto(s) ` +
-      "vinculado(s). Edite ou transfira esses produtos primeiro."
+      `Não é possível excluir esta categoria: há ${quantidade} ` +
+      `${substantivo}. ${mensagem}`
     );
   }
 

@@ -7,7 +7,7 @@ Abra o CMD e execute:
 ```cmd
 cd /d "C:\Users\syssy\Documents\artesdacy"
 git add -A
-git commit -m "novos arquivos"
+git commit -m "impedir exclusao da categoria com produtos"
 git push origin main
 ```
 
@@ -20,6 +20,12 @@ Se `git` não for reconhecido, execute primeiro:
 ```cmd
 set "PATH=%LOCALAPPDATA%\GitHubDesktop\app-3.5.2\resources\app\git\cmd;%PATH%"
 ```
+### Exlcusão no github
+git add -u -- imagens\categoria imagens\produtos produtos.json
+git status --short
+git --no-pager diff --cached --stat
+git commit -m "Remove arquivos antigos do catálogo"
+git push origin main
 
 ## 2. Publicar no Cloudflare
 
@@ -28,6 +34,8 @@ O projeto usa **Direct Upload**. O `git push` não publica o site. Na pasta do p
 ```cmd
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\deploy-pages.ps1"
 ```
+### Exclusão no cluldflare
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\deploy-pages.ps1"
 
 Na primeira utilização, autentique-se antes:
 

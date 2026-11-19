@@ -1,0 +1,1495 @@
+------formdata-undici-084214752704
+Content-Disposition: form-data; name="metadata"
+
+{"main_module":"functionsWorker-0.7728037610698822.js"}
+------formdata-undici-084214752704
+Content-Disposition: form-data; name="functionsWorker-0.7728037610698822.js"; filename="functionsWorker-0.7728037610698822.js"
+Content-Type: application/javascript+module
+
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// _lib/auth.js
+var SESSION_COOKIE = "artesdacy_session";
+var SESSION_DURATION_SECONDS = 8 * 60 * 60;
+function encodeBase64Url(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+__name(encodeBase64Url, "encodeBase64Url");
+function decodeBase64Url(value) {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(base64 + "=".repeat((4 - base64.length % 4) % 4));
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+__name(decodeBase64Url, "decodeBase64Url");
+function cookieOptions(request, maxAge) {
+  const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
+  const expiration = Number.isInteger(maxAge) ? `; Max-Age=${maxAge}` : "";
+  return `Path=/; HttpOnly; SameSite=Lax${expiration}${secure}`;
+}
+__name(cookieOptions, "cookieOptions");
+function readCookie(request, name) {
+  const cookies = request.headers.get("cookie") || "";
+  const prefix = `${name}=`;
+  const cookie = cookies.split(";").map((value) => value.trim()).find((value) => value.startsWith(prefix));
+  return cookie ? cookie.slice(prefix.length) : "";
+}
+__name(readCookie, "readCookie");
+function setCookie(response, request, name, value, maxAge) {
+  response.headers.append(
+    "set-cookie",
+    `${name}=${value}; ${cookieOptions(request, maxAge)}`
+  );
+  return response;
+}
+__name(setCookie, "setCookie");
+function clearCookie(response, request, name) {
+  return setCookie(response, request, name, "", 0);
+}
+__name(clearCookie, "clearCookie");
+async function sessionKey(env) {
+  if (!env.SESSION_SECRET || env.SESSION_SECRET.length < 32) {
+    throw new Error("SESSION_SECRET precisa ter pelo menos 32 caracteres.");
+  }
+  return crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(env.SESSION_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"]
+  );
+}
+__name(sessionKey, "sessionKey");
+async function createSession(email, env) {
+  const payload = encodeBase64Url(
+    new TextEncoder().encode(JSON.stringify({
+      email,
+      expiresAt: Math.floor(Date.now() / 1e3) + SESSION_DURATION_SECONDS
+    }))
+  );
+  const key = await sessionKey(env);
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(payload)
+  );
+  return `${payload}.${encodeBase64Url(new Uint8Array(signature))}`;
+}
+__name(createSession, "createSession");
+async function isAuthorized(request, env) {
+  const session = readCookie(request, SESSION_COOKIE);
+  const [payload, encodedSignature, ...extra] = session.split(".");
+  if (!payload || !encodedSignature || extra.length) return false;
+  let signature;
+  let data;
+  try {
+    signature = decodeBase64Url(encodedSignature);
+    data = JSON.parse(new TextDecoder().decode(decodeBase64Url(payload)));
+  } catch {
+    return false;
+  }
+  const key = await sessionKey(env);
+  const validSignature = await crypto.subtle.verify(
+    "HMAC",
+    key,
+    signature,
+    new TextEncoder().encode(payload)
+  );
+  return validSignature && data.email === "syssy.ana.dc@gmail.com" && Number.isInteger(data.expiresAt) && data.expiresAt > Math.floor(Date.now() / 1e3);
+}
+__name(isAuthorized, "isAuthorized");
+
+// _lib/admin-api.js
+function jsonResponse(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store"
+    }
+  });
+}
+__name(jsonResponse, "jsonResponse");
+async function requireAdmin(context) {
+  if (!await isAuthorized(context.request, context.env)) {
+    return jsonResponse({ error: "Acesso n\xE3o autorizado." }, 401);
+  }
+  if (!context.env.DB) {
+    return jsonResponse({ error: "O banco D1 n\xE3o est\xE1 configurado." }, 503);
+  }
+  return null;
+}
+__name(requireAdmin, "requireAdmin");
+function hasSameOrigin(request) {
+  const origin = request.headers.get("origin");
+  return Boolean(origin) && new URL(origin).origin === new URL(request.url).origin;
+}
+__name(hasSameOrigin, "hasSameOrigin");
+async function readJson(request) {
+  try {
+    return await request.json();
+  } catch {
+    return null;
+  }
+}
+__name(readJson, "readJson");
+function validId(value) {
+  return typeof value === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+}
+__name(validId, "validId");
+function validImageUrl(value, area) {
+  if (typeof value !== "string") return false;
+  if (value === "") return area === "categories";
+  const match2 = value.match(/^\/api\/media\?key=([^&]+)$/);
+  if (!match2) return false;
+  let key;
+  try {
+    key = decodeURIComponent(match2[1]);
+  } catch {
+    return false;
+  }
+  return new RegExp(`^${area}\\/[a-zA-Z0-9-]+\\.(jpg|jpeg|png)$`).test(key);
+}
+__name(validImageUrl, "validImageUrl");
+function toBoolean(value) {
+  return value === true ? 1 : 0;
+}
+__name(toBoolean, "toBoolean");
+function errorMessage(error) {
+  const message = String(error?.message || "");
+  if (message.includes("UNIQUE constraint failed")) {
+    return "J\xE1 existe um registro com este identificador.";
+  }
+  if (message.includes("FOREIGN KEY constraint failed")) {
+    return "N\xE3o \xE9 poss\xEDvel excluir uma categoria que possui produtos.";
+  }
+  return "N\xE3o foi poss\xEDvel salvar no banco de dados.";
+}
+__name(errorMessage, "errorMessage");
+
+// api/admin/catalog.js
+async function onRequestGet(context) {
+  const unauthorized = await requireAdmin(context);
+  if (unauthorized) return unauthorized;
+  const [settings, categories, products] = await Promise.all([
+    context.env.DB.prepare(
+      "SELECT setting_key, setting_value FROM site_settings"
+    ).all(),
+    context.env.DB.prepare(`
+      SELECT id, name, description, image, display_order, active
+      FROM categories
+      ORDER BY display_order, name
+    `).all(),
+    context.env.DB.prepare(`
+      SELECT id, category_id, name, description, measures, materials, tags,
+             images, price, show_price, featured, active, display_order
+      FROM products
+      ORDER BY display_order, name
+    `).all()
+  ]);
+  return jsonResponse({
+    configuracao: Object.fromEntries(
+      settings.results.map((row) => [row.setting_key, row.setting_value])
+    ),
+    categorias: categories.results.map((row) => ({
+      id: row.id,
+      nome: row.name,
+      descricao: row.description,
+      imagem: row.image,
+      ordem: row.display_order,
+      ativa: Boolean(row.active)
+    })),
+    produtos: products.results.map((row) => ({
+      id: row.id,
+      categoria: row.category_id,
+      nome: row.name,
+      descricao: row.description,
+      medidas: row.measures,
+      materiais: row.materials,
+      tags: JSON.parse(row.tags || "[]"),
+      imagens: JSON.parse(row.images || "[]"),
+      preco: row.price,
+      exibirPreco: Boolean(row.show_price),
+      destaque: Boolean(row.featured),
+      ativo: Boolean(row.active),
+      ordem: row.display_order
+    }))
+  });
+}
+__name(onRequestGet, "onRequestGet");
+
+// api/admin/categories.js
+function validCategory(category) {
+  return category && validId(category.id) && typeof category.nome === "string" && category.nome.trim().length > 0 && typeof category.descricao === "string" && validImageUrl(category.imagem, "categories") && Number.isInteger(category.ordem) && category.ordem >= 0;
+}
+__name(validCategory, "validCategory");
+async function onRequestPost(context) {
+  const unauthorized = await requireAdmin(context);
+  if (unauthorized) return unauthorized;
+  if (!hasSameOrigin(context.request)) {
+    return jsonResponse({ error: "Origem da solicita\xE7\xE3o n\xE3o autorizada." }, 403);
+  }
+  const category = await readJson(context.request);
+  if (!validCategory(category)) {
+    return jsonResponse({ error: "Dados de categoria inv\xE1lidos." }, 400);
+  }
+  try {
+    await context.env.DB.prepare(`
+      INSERT INTO categories (id, name, description, image, display_order, active)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(
+      category.id,
+      category.nome.trim(),
+      category.descricao.trim(),
+      category.imagem.trim(),
+      category.ordem,
+      toBoolean(category.ativa)
+    ).run();
+    return jsonResponse({ id: category.id }, 201);
+  } catch (error) {
+    return jsonResponse({ error: errorMessage(error) }, 409);
+  }
+}
+__name(onRequestPost, "onRequestPost");
+async function onRequestPut(context) {
+  const unauthorized = await requireAdmin(context);
+  if (unauthorized) return unauthorized;
+  if (!hasSameOrigin(context.request)) {
+    return jsonResponse({ error: "Origem da solicita\xE7\xE3o n\xE3o autorizada." }, 403);
+  }
+  const category = await readJson(context.request);
+  const originalId = new URL(context.request.url).searchParams.get("id");
+  if (!validId(originalId) || !validCategory(category)) {
+    return jsonResponse({ error: "Dados de categoria inv\xE1lidos." }, 400);
+  }
+  try {
+    const result = await context.env.DB.prepare(`
+      UPDATE categories
+      SET id = ?, name = ?, description = ?, image = ?, display_order = ?,
+          active = ?
+      WHERE id = ?
+    `).bind(
+      category.id,
+      category.nome.trim(),
+      category.descricao.trim(),
+      category.imagem.trim(),
+      category.ordem,
+      toBoolean(category.ativa),
+      originalId
+    ).run();
+    if (result.meta.changes === 0) {
+      return jsonResponse({ error: "Categoria n\xE3o encontrada." }, 404);
+    }
+    return jsonResponse({ id: category.id });
+  } catch (error) {
+    return jsonResponse({ error: errorMessage(error) }, 409);
+  }
+}
+__name(onRequestPut, "onRequestPut");
+async function onRequestDelete(context) {
+  const unauthorized = await requireAdmin(context);
+  if (unauthorized) return unauthorized;
+  if (!hasSameOrigin(context.request)) {
+    return jsonResponse({ error: "Origem da solicita\xE7\xE3o n\xE3o autorizada." }, 403);
+  }
+  const id = new URL(context.request.url).searchParams.get("id");
+  if (!validId(id)) {
+    return jsonResponse({ error: "Identificador de categoria inv\xE1lido." }, 400);
+  }
+  try {
+    const productCount = await context.env.DB.prepare(`
+      SELECT COUNT(*) AS quantity
+      FROM products
+      WHERE category_id = ?
+    `).bind(id).first();
+    if (!productCount) {
+      return jsonResponse({
+        error: "N\xE3o foi poss\xEDvel verificar os produtos desta categoria."
+      }, 500);
+    }
+    const quantity = Number(productCount.quantity);
+    if (quantity > 0) {
+      const message = quantity === 1 ? "Exclua o produto ou altere a categoria dele primeiro." : "Exclua os produtos ou altere a categoria deles primeiro.";
+      const noun = quantity === 1 ? "produto vinculado" : "produtos vinculados";
+      return jsonResponse({
+        error: `N\xE3o \xE9 poss\xEDvel excluir esta categoria: h\xE1 ${quantity} ${noun}. ${message}`
+      }, 409);
+    }
+    const result = await context.env.DB.prepare(
+      "DELETE FROM categories WHERE id = ?"
+    ).bind(id).run();
+    if (result.meta.changes === 0) {
+      return jsonResponse({ error: "Categoria n\xE3o encontrada." }, 404);
+    }
+    return jsonResponse({ id });
+  } catch (error) {
+    return jsonResponse({ error: errorMessage(error) }, 409);
+  }
+}
+__name(onRequestDelete, "onRequestDelete");
+
+// api/admin/products.js
+function validProduct(product) {
+  return product && validId(product.id) && validId(product.categoria) && typeof product.nome === "string" && product.nome.trim().length > 0 && typeof product.descricao === "string" && typeof product.medidas === "string" && typeof product.materiais === "string" && Array.isArray(product.tags || []) && (product.tags || []).every((tag) => typeof tag === "string") && Array.isArray(product.imagens) && product.imagens.every((image) => validImageUrl(image, "products")) && (product.preco === null || Number.isInteger(product.preco) && product.preco >= 0) && Number.isInteger(product.ordem) && product.ordem >= 0;
+}
+__name(validProduct, "validProduct");
+async function onRequestPost2(context) {
+  const unauthorized = await requireAdmin(context);
+  if (unauthorized) return unauthorized;
+  if (!hasSameOrigin(context.request)) {
+    return jsonResponse({ error: "Origem da solicita\xE7\xE3o n\xE3o autorizada." }, 403);
+  }
+  const product = await readJson(context.request);
+  if (!validProduct(product)) {
+    return jsonResponse({ error: "Dados de produto inv\xE1lidos." }, 400);
+  }
+  try {
+    await context.env.DB.prepare(`
+      INSERT INTO products
+        (id, category_id, name, description, measures, materials, tags, images,
+         price, show_price, featured, active, display_order)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      product.id,
+      product.categoria,
+      product.nome.trim(),
+      product.descricao.trim(),
+      product.medidas.trim(),
+      product.materiais.trim(),
+      JSON.stringify(product.tags || []),
+      JSON.stringify(product.imagens),
+      product.preco,
+      toBoolean(product.exibirPreco),
+      toBoolean(product.destaque),
+      toBoolean(product.ativo),
+      product.ordem
+    ).run();
+    return jsonResponse({ id: product.id }, 201);
+  } catch (error) {
+    return jsonResponse({ error: errorMessage(error) }, 409);
+  }
+}
+__name(onRequestPost2, "onRequestPost");
+async function onRequestPut2(context) {
+  const unauthorized = await requireAdmin(context);
+  if (unauthorized) return unauthorized;
+  if (!hasSameOrigin(context.request)) {
+    return jsonResponse({ error: "Origem da solicita\xE7\xE3o n\xE3o autorizada." }, 403);
+  }
+  const product = await readJson(context.request);
+  const originalId = new URL(context.request.url).searchParams.get("id");
+  if (!validId(originalId) || !validProduct(product)) {
+    return jsonResponse({ error: "Dados de produto inv\xE1lidos." }, 400);
+  }
+  try {
+    const result = await context.env.DB.prepare(`
+      UPDATE products
+      SET id = ?, category_id = ?, name = ?, description = ?, measures = ?,
+          materials = ?, tags = ?, images = ?, price = ?, show_price = ?,
+          featured = ?, active = ?, display_order = ?
+      WHERE id = ?
+    `).bind(
+      product.id,
+      product.categoria,
+      product.nome.trim(),
+      product.descricao.trim(),
+      product.medidas.trim(),
+      product.materiais.trim(),
+      JSON.stringify(product.tags || []),
+      JSON.stringify(product.imagens),
+      product.preco,
+      toBoolean(product.exibirPreco),
+      toBoolean(product.destaque),
+      toBoolean(product.ativo),
+      product.ordem,
+      originalId
+    ).run();
+    if (result.meta.changes === 0) {
+      return jsonResponse({ error: "Produto n\xE3o encontrado." }, 404);
+    }
+    return jsonResponse({ id: product.id });
+  } catch (error) {
+    return jsonResponse({ error: errorMessage(error) }, 409);
+  }
+}
+__name(onRequestPut2, "onRequestPut");
+async function onRequestDelete2(context) {
+  const unauthorized = await requireAdmin(context);
+  if (unauthorized) return unauthorized;
+  if (!hasSameOrigin(context.request)) {
+    return jsonResponse({ error: "Origem da solicita\xE7\xE3o n\xE3o autorizada." }, 403);
+  }
+  const id = new URL(context.request.url).searchParams.get("id");
+  if (!validId(id)) {
+    return jsonResponse({ error: "Identificador de produto inv\xE1lido." }, 400);
+  }
+  const result = await context.env.DB.prepare(
+    "DELETE FROM products WHERE id = ?"
+  ).bind(id).run();
+  if (result.meta.changes === 0) {
+    return jsonResponse({ error: "Produto n\xE3o encontrado." }, 404);
+  }
+  return jsonResponse({ id });
+}
+__name(onRequestDelete2, "onRequestDelete");
+
+// api/auth/callback.js
+var FLOW_COOKIE = "artesdacy_oauth_flow";
+var ALLOWED_EMAIL = "syssy.ana.dc@gmail.com";
+var GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+var GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
+function textResponse(request, text, status) {
+  const response = new Response(text, {
+    status,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "no-store"
+    }
+  });
+  clearCookie(response, request, FLOW_COOKIE);
+  return response;
+}
+__name(textResponse, "textResponse");
+async function onRequestGet2({ request, env }) {
+  const url = new URL(request.url);
+  const oauthError = url.searchParams.get("error");
+  if (oauthError) {
+    return textResponse(request, "Login Google cancelado ou recusado.", 400);
+  }
+  const code = url.searchParams.get("code");
+  const returnedState = url.searchParams.get("state");
+  const encodedFlow = readCookie(request, FLOW_COOKIE);
+  if (!code || !returnedState || !encodedFlow) {
+    return textResponse(request, "Solicita\xE7\xE3o de login inv\xE1lida. Tente novamente.", 400);
+  }
+  let flow;
+  try {
+    const binary = atob(
+      encodedFlow.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - encodedFlow.length % 4) % 4)
+    );
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    flow = JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    return textResponse(request, "Sess\xE3o de login inv\xE1lida. Tente novamente.", 400);
+  }
+  if (!flow || flow.state !== returnedState || typeof flow.verifier !== "string" || flow.returnTo !== "/admin.html") {
+    return textResponse(request, "Valida\xE7\xE3o de seguran\xE7a do login falhou.", 400);
+  }
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    return textResponse(request, "O login Google ainda n\xE3o est\xE1 configurado.", 503);
+  }
+  const redirectUri = new URL("/api/auth/callback", url).toString();
+  const tokenResponse = await fetch(GOOGLE_TOKEN_URL, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      code,
+      client_id: env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+      code_verifier: flow.verifier
+    })
+  });
+  if (!tokenResponse.ok) {
+    console.error("Google OAuth token exchange failed:", tokenResponse.status);
+    return textResponse(request, "N\xE3o foi poss\xEDvel validar o login Google.", 502);
+  }
+  const tokenData = await tokenResponse.json();
+  if (typeof tokenData.access_token !== "string") {
+    return textResponse(request, "O Google n\xE3o retornou um token de acesso v\xE1lido.", 502);
+  }
+  const userResponse = await fetch(GOOGLE_USERINFO_URL, {
+    headers: { authorization: `Bearer ${tokenData.access_token}` }
+  });
+  if (!userResponse.ok) {
+    console.error("Google user info request failed:", userResponse.status);
+    return textResponse(request, "N\xE3o foi poss\xEDvel confirmar a conta Google.", 502);
+  }
+  const user = await userResponse.json();
+  if (typeof user.email !== "string" || user.email.toLowerCase() !== ALLOWED_EMAIL || user.email_verified !== true) {
+    return textResponse(
+      request,
+      "Acesso n\xE3o permitido. Esta conta Google n\xE3o est\xE1 autorizada para o painel.",
+      403
+    );
+  }
+  const session = await createSession(ALLOWED_EMAIL, env);
+  const response = new Response(null, {
+    status: 302,
+    headers: { location: new URL(flow.returnTo, url).toString() }
+  });
+  clearCookie(response, request, FLOW_COOKIE);
+  setCookie(
+    response,
+    request,
+    SESSION_COOKIE,
+    session
+  );
+  return response;
+}
+__name(onRequestGet2, "onRequestGet");
+
+// api/auth/login.js
+var FLOW_COOKIE2 = "artesdacy_oauth_flow";
+var GOOGLE_AUTHORIZATION_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+function encodeBase64Url2(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+__name(encodeBase64Url2, "encodeBase64Url");
+function randomToken() {
+  return encodeBase64Url2(crypto.getRandomValues(new Uint8Array(32)));
+}
+__name(randomToken, "randomToken");
+function redirectToAdmin(request, message) {
+  const url = new URL("/admin.html", request.url);
+  url.searchParams.set("login", message);
+  return new Response(null, {
+    status: 302,
+    headers: { location: url.toString() }
+  });
+}
+__name(redirectToAdmin, "redirectToAdmin");
+async function onRequestGet3({ request, env }) {
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    return new Response("O login Google ainda n\xE3o est\xE1 configurado.", {
+      status: 503,
+      headers: { "content-type": "text/plain; charset=utf-8" }
+    });
+  }
+  const state = randomToken();
+  const verifier = randomToken();
+  const challenge = encodeBase64Url2(
+    new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))
+    )
+  );
+  const flow = encodeBase64Url2(new TextEncoder().encode(JSON.stringify({
+    state,
+    verifier,
+    returnTo: "/admin.html"
+  })));
+  const redirectUri = new URL("/api/auth/callback", request.url).toString();
+  const authorization = new URL(GOOGLE_AUTHORIZATION_URL);
+  authorization.search = new URLSearchParams({
+    client_id: env.GOOGLE_CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: "openid email",
+    state,
+    code_challenge: challenge,
+    code_challenge_method: "S256",
+    prompt: "select_account"
+  }).toString();
+  const response = new Response(null, {
+    status: 302,
+    headers: { location: authorization.toString() }
+  });
+  clearCookie(response, request, FLOW_COOKIE2);
+  setCookie(response, request, FLOW_COOKIE2, flow, 600);
+  return response;
+}
+__name(onRequestGet3, "onRequestGet");
+async function onRequestPost3({ request }) {
+  return redirectToAdmin(request, "denied");
+}
+__name(onRequestPost3, "onRequestPost");
+
+// api/auth/logout.js
+async function onRequestGet4({ request }) {
+  const response = new Response(null, {
+    status: 302,
+    headers: {
+      location: new URL("/", request.url).toString(),
+      "cache-control": "no-store"
+    }
+  });
+  return clearCookie(response, request, SESSION_COOKIE);
+}
+__name(onRequestGet4, "onRequestGet");
+
+// api/catalog.js
+function jsonResponse2(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store"
+    }
+  });
+}
+__name(jsonResponse2, "jsonResponse");
+async function onRequestGet5({ env }) {
+  if (!env.DB) {
+    return jsonResponse2({ error: "O banco de dados D1 n\xE3o est\xE1 configurado." }, 503);
+  }
+  const [settings, categories, products] = await Promise.all([
+    env.DB.prepare("SELECT setting_key, setting_value FROM site_settings").all(),
+    env.DB.prepare(`
+      SELECT id, name, description, image, display_order, active
+      FROM categories
+      WHERE active = 1
+      ORDER BY display_order, name
+    `).all(),
+    env.DB.prepare(`
+      SELECT id, category_id, name, description, measures, materials, tags,
+             images, price, show_price, featured, active, display_order
+      FROM products
+      WHERE active = 1
+      ORDER BY display_order, name
+    `).all()
+  ]);
+  const configuration = Object.fromEntries(
+    settings.results.map((row) => [row.setting_key, row.setting_value])
+  );
+  return jsonResponse2({
+    configuracao: {
+      marca: configuration.marca || "Artes da Cy",
+      whatsapp: configuration.whatsapp || "",
+      tituloCapa: configuration.tituloCapa || "Artes da Cy",
+      subtituloCapa: configuration.subtituloCapa || "",
+      apresentacao: configuration.apresentacao || "",
+      logo: configuration.logo || "/api/media?key=site/logo.jpg",
+      capa: configuration.capa || "/api/media?key=site/capa.jpg"
+    },
+    categorias: categories.results.map((row) => ({
+      id: row.id,
+      nome: row.name,
+      descricao: row.description,
+      imagem: row.image,
+      ordem: row.display_order,
+      ativa: Boolean(row.active)
+    })),
+    produtos: products.results.map((row) => ({
+      id: row.id,
+      categoria: row.category_id,
+      nome: row.name,
+      descricao: row.description,
+      medidas: row.measures,
+      materiais: row.materials,
+      tags: JSON.parse(row.tags || "[]"),
+      imagens: JSON.parse(row.images || "[]"),
+      preco: row.price,
+      exibirPreco: Boolean(row.show_price),
+      destaque: Boolean(row.featured),
+      ativo: Boolean(row.active),
+      ordem: row.display_order
+    }))
+  });
+}
+__name(onRequestGet5, "onRequestGet");
+
+// api/media.js
+var MAX_IMAGE_SIZE = 300 * 1e3;
+function jsonResponse3(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8" }
+  });
+}
+__name(jsonResponse3, "jsonResponse");
+function validKey(key) {
+  return /^(products|categories|site)\/[a-zA-Z0-9-]+\.(jpg|jpeg|png)$/.test(key);
+}
+__name(validKey, "validKey");
+function detectImageType(bytes) {
+  if (bytes.length >= 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) {
+    return { contentType: "image/jpeg", extension: "jpg" };
+  }
+  if (bytes.length >= 8 && bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71 && bytes[4] === 13 && bytes[5] === 10 && bytes[6] === 26 && bytes[7] === 10) {
+    return { contentType: "image/png", extension: "png" };
+  }
+  return null;
+}
+__name(detectImageType, "detectImageType");
+async function readImageBody(request) {
+  const reader = request.body?.getReader();
+  if (!reader) return { body: new Uint8Array(), tooLarge: false };
+  const chunks = [];
+  let size = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > MAX_IMAGE_SIZE) {
+      await reader.cancel();
+      return { body: new Uint8Array(), tooLarge: true };
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return { body, tooLarge: false };
+}
+__name(readImageBody, "readImageBody");
+async function onRequestGet6({ request, env }) {
+  if (!env.MEDIA) {
+    return jsonResponse3({ error: "O armazenamento R2 n\xE3o est\xE1 configurado." }, 503);
+  }
+  const key = new URL(request.url).searchParams.get("key") || "";
+  if (!validKey(key)) {
+    return jsonResponse3({ error: "Chave de imagem inv\xE1lida." }, 400);
+  }
+  const object = await env.MEDIA.get(key);
+  if (!object) {
+    return jsonResponse3({ error: "Imagem n\xE3o encontrada." }, 404);
+  }
+  const headers = new Headers({
+    "cache-control": "public, max-age=86400",
+    "content-type": object.httpMetadata?.contentType || "application/octet-stream",
+    "etag": object.httpEtag,
+    "x-content-type-options": "nosniff"
+  });
+  return new Response(object.body, { headers });
+}
+__name(onRequestGet6, "onRequestGet");
+async function onRequestPost4({ request, env }) {
+  if (!env.MEDIA) {
+    return jsonResponse3({ error: "O armazenamento R2 n\xE3o est\xE1 configurado." }, 503);
+  }
+  if (!await isAuthorized(request, env)) {
+    return jsonResponse3({ error: "N\xE3o autorizado." }, 401);
+  }
+  const origin = request.headers.get("origin");
+  if (!origin || new URL(origin).origin !== new URL(request.url).origin) {
+    return jsonResponse3({ error: "Origem da solicita\xE7\xE3o n\xE3o autorizada." }, 403);
+  }
+  const declaredSize = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declaredSize) && declaredSize > MAX_IMAGE_SIZE) {
+    return jsonResponse3({ error: "A imagem deve ter no m\xE1ximo 300 KB." }, 413);
+  }
+  const image = await readImageBody(request);
+  if (image.tooLarge) {
+    return jsonResponse3({ error: "A imagem deve ter no m\xE1ximo 300 KB." }, 413);
+  }
+  if (image.body.byteLength === 0) {
+    return jsonResponse3({ error: "A imagem deve ter entre 1 byte e 300 KB." }, 413);
+  }
+  const detectedType = detectImageType(image.body);
+  if (!detectedType) {
+    return jsonResponse3({
+      error: "Arquivo inv\xE1lido. Envie uma imagem JPG, JPEG ou PNG."
+    }, 415);
+  }
+  const area = new URL(request.url).searchParams.get("area");
+  if (area !== "products" && area !== "categories") {
+    return jsonResponse3({ error: "Informe a \xE1rea products ou categories." }, 400);
+  }
+  const key = `${area}/${crypto.randomUUID()}.${detectedType.extension}`;
+  await env.MEDIA.put(key, image.body, {
+    httpMetadata: { contentType: detectedType.contentType }
+  });
+  return jsonResponse3({
+    key,
+    url: `/api/media?key=${encodeURIComponent(key)}`
+  }, 201);
+}
+__name(onRequestPost4, "onRequestPost");
+
+// produtos.json.js
+function onRequest() {
+  return new Response("O cat\xE1logo JSON foi removido. Use a API do cat\xE1logo.", {
+    status: 404,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "no-store"
+    }
+  });
+}
+__name(onRequest, "onRequest");
+
+// _middleware.js
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
+}
+__name(escapeHtml, "escapeHtml");
+function socialDescription(value) {
+  const normalized = String(value || "").replace(/\s+/g, " ").trim();
+  return normalized.length > 200 ? `${normalized.slice(0, 197).trimEnd()}...` : normalized || "Conhe\xE7a esta cria\xE7\xE3o artesanal da Artes da Cy.";
+}
+__name(socialDescription, "socialDescription");
+async function addProductSocialMetadata(response, request, env) {
+  if (!response.ok) return response;
+  const url = new URL(request.url);
+  const productId = url.searchParams.get("produto");
+  if (!productId || !env.DB) return response;
+  const result = await env.DB.prepare(`
+    SELECT name, description, images, price, show_price
+    FROM products
+    WHERE id = ? AND active = 1
+  `).bind(productId).first();
+  if (!result) return response;
+  const images = JSON.parse(result.images || "[]");
+  const imagePath = Array.isArray(images) ? images.find((image) => typeof image === "string" && image.startsWith("/api/media?key=")) : null;
+  const title = `${result.name} | Artes da Cy`;
+  const description = socialDescription(result.description);
+  const pageUrl = url.toString();
+  const metadata = [
+    `<meta property="og:type" content="product">`,
+    `<meta property="og:site_name" content="Artes da Cy">`,
+    `<meta property="og:locale" content="pt_BR">`,
+    `<meta property="og:title" content="${escapeHtml(title)}">`,
+    `<meta property="og:description" content="${escapeHtml(description)}">`,
+    `<meta property="og:url" content="${escapeHtml(pageUrl)}">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
+    `<meta name="twitter:title" content="${escapeHtml(title)}">`,
+    `<meta name="twitter:description" content="${escapeHtml(description)}">`
+  ];
+  if (imagePath) {
+    const imageUrl = new URL(imagePath, url.origin).toString();
+    metadata.push(
+      `<meta property="og:image" content="${escapeHtml(imageUrl)}">`,
+      `<meta property="og:image:alt" content="${escapeHtml(result.name)}">`,
+      `<meta name="twitter:image" content="${escapeHtml(imageUrl)}">`
+    );
+  }
+  if (result.show_price && Number.isInteger(result.price)) {
+    metadata.push(
+      `<meta property="product:price:amount" content="${(result.price / 100).toFixed(2)}">`,
+      `<meta property="product:price:currency" content="BRL">`
+    );
+  }
+  const html = await response.text();
+  const updatedHtml = html.replace(
+    /<title>[^<]*<\/title>/i,
+    `<title>${escapeHtml(title)}</title>`
+  ).replace(
+    /<meta\s+name="description"\s+content="[^"]*"\s*\/?>/i,
+    `<meta name="description" content="${escapeHtml(description)}">`
+  ).replace("</head>", `${metadata.join("\n  ")}
+</head>`);
+  const headers = new Headers(response.headers);
+  headers.set("cache-control", "no-store");
+  headers.delete("content-length");
+  headers.delete("etag");
+  return new Response(updatedHtml, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+__name(addProductSocialMetadata, "addProductSocialMetadata");
+async function onRequest2(context) {
+  const url = new URL(context.request.url);
+  if (["/produto", "/produto.html"].includes(url.pathname) && context.request.method === "GET") {
+    const response = await context.next();
+    return addProductSocialMetadata(response, context.request, context.env);
+  }
+  if (!["/admin", "/admin/", "/admin.html"].includes(url.pathname)) {
+    return context.next();
+  }
+  if (await isAuthorized(context.request, context.env)) {
+    const response = await context.next();
+    const headers = new Headers(response.headers);
+    headers.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
+    headers.set("pragma", "no-cache");
+    headers.set("expires", "0");
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers
+    });
+  }
+  return Response.redirect(
+    new URL("/api/auth/login?returnTo=%2Fadmin.html", url),
+    302
+  );
+}
+__name(onRequest2, "onRequest");
+
+// ../.wrangler/tmp/pages-yGYJNr/functionsRoutes-0.05782119788830509.mjs
+var routes = [
+  {
+    routePath: "/api/admin/catalog",
+    mountPath: "/api/admin",
+    method: "GET",
+    middlewares: [],
+    modules: [onRequestGet]
+  },
+  {
+    routePath: "/api/admin/categories",
+    mountPath: "/api/admin",
+    method: "DELETE",
+    middlewares: [],
+    modules: [onRequestDelete]
+  },
+  {
+    routePath: "/api/admin/categories",
+    mountPath: "/api/admin",
+    method: "POST",
+    middlewares: [],
+    modules: [onRequestPost]
+  },
+  {
+    routePath: "/api/admin/categories",
+    mountPath: "/api/admin",
+    method: "PUT",
+    middlewares: [],
+    modules: [onRequestPut]
+  },
+  {
+    routePath: "/api/admin/products",
+    mountPath: "/api/admin",
+    method: "DELETE",
+    middlewares: [],
+    modules: [onRequestDelete2]
+  },
+  {
+    routePath: "/api/admin/products",
+    mountPath: "/api/admin",
+    method: "POST",
+    middlewares: [],
+    modules: [onRequestPost2]
+  },
+  {
+    routePath: "/api/admin/products",
+    mountPath: "/api/admin",
+    method: "PUT",
+    middlewares: [],
+    modules: [onRequestPut2]
+  },
+  {
+    routePath: "/api/auth/callback",
+    mountPath: "/api/auth",
+    method: "GET",
+    middlewares: [],
+    modules: [onRequestGet2]
+  },
+  {
+    routePath: "/api/auth/login",
+    mountPath: "/api/auth",
+    method: "GET",
+    middlewares: [],
+    modules: [onRequestGet3]
+  },
+  {
+    routePath: "/api/auth/login",
+    mountPath: "/api/auth",
+    method: "POST",
+    middlewares: [],
+    modules: [onRequestPost3]
+  },
+  {
+    routePath: "/api/auth/logout",
+    mountPath: "/api/auth",
+    method: "GET",
+    middlewares: [],
+    modules: [onRequestGet4]
+  },
+  {
+    routePath: "/api/catalog",
+    mountPath: "/api",
+    method: "GET",
+    middlewares: [],
+    modules: [onRequestGet5]
+  },
+  {
+    routePath: "/api/media",
+    mountPath: "/api",
+    method: "GET",
+    middlewares: [],
+    modules: [onRequestGet6]
+  },
+  {
+    routePath: "/api/media",
+    mountPath: "/api",
+    method: "POST",
+    middlewares: [],
+    modules: [onRequestPost4]
+  },
+  {
+    routePath: "/produtos.json",
+    mountPath: "/",
+    method: "",
+    middlewares: [],
+    modules: [onRequest]
+  },
+  {
+    routePath: "/",
+    mountPath: "/",
+    method: "",
+    middlewares: [onRequest2],
+    modules: []
+  }
+];
+
+// ../../../AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/path-to-regexp/dist.es2015/index.js
+function lexer(str) {
+  var tokens = [];
+  var i = 0;
+  while (i < str.length) {
+    var char = str[i];
+    if (char === "*" || char === "+" || char === "?") {
+      tokens.push({ type: "MODIFIER", index: i, value: str[i++] });
+      continue;
+    }
+    if (char === "\\") {
+      tokens.push({ type: "ESCAPED_CHAR", index: i++, value: str[i++] });
+      continue;
+    }
+    if (char === "{") {
+      tokens.push({ type: "OPEN", index: i, value: str[i++] });
+      continue;
+    }
+    if (char === "}") {
+      tokens.push({ type: "CLOSE", index: i, value: str[i++] });
+      continue;
+    }
+    if (char === ":") {
+      var name = "";
+      var j = i + 1;
+      while (j < str.length) {
+        var code = str.charCodeAt(j);
+        if (
+          // `0-9`
+          code >= 48 && code <= 57 || // `A-Z`
+          code >= 65 && code <= 90 || // `a-z`
+          code >= 97 && code <= 122 || // `_`
+          code === 95
+        ) {
+          name += str[j++];
+          continue;
+        }
+        break;
+      }
+      if (!name)
+        throw new TypeError("Missing parameter name at ".concat(i));
+      tokens.push({ type: "NAME", index: i, value: name });
+      i = j;
+      continue;
+    }
+    if (char === "(") {
+      var count = 1;
+      var pattern = "";
+      var j = i + 1;
+      if (str[j] === "?") {
+        throw new TypeError('Pattern cannot start with "?" at '.concat(j));
+      }
+      while (j < str.length) {
+        if (str[j] === "\\") {
+          pattern += str[j++] + str[j++];
+          continue;
+        }
+        if (str[j] === ")") {
+          count--;
+          if (count === 0) {
+            j++;
+            break;
+          }
+        } else if (str[j] === "(") {
+          count++;
+          if (str[j + 1] !== "?") {
+            throw new TypeError("Capturing groups are not allowed at ".concat(j));
+          }
+        }
+        pattern += str[j++];
+      }
+      if (count)
+        throw new TypeError("Unbalanced pattern at ".concat(i));
+      if (!pattern)
+        throw new TypeError("Missing pattern at ".concat(i));
+      tokens.push({ type: "PATTERN", index: i, value: pattern });
+      i = j;
+      continue;
+    }
+    tokens.push({ type: "CHAR", index: i, value: str[i++] });
+  }
+  tokens.push({ type: "END", index: i, value: "" });
+  return tokens;
+}
+__name(lexer, "lexer");
+function parse(str, options) {
+  if (options === void 0) {
+    options = {};
+  }
+  var tokens = lexer(str);
+  var _a = options.prefixes, prefixes = _a === void 0 ? "./" : _a, _b = options.delimiter, delimiter = _b === void 0 ? "/#?" : _b;
+  var result = [];
+  var key = 0;
+  var i = 0;
+  var path = "";
+  var tryConsume = /* @__PURE__ */ __name(function(type) {
+    if (i < tokens.length && tokens[i].type === type)
+      return tokens[i++].value;
+  }, "tryConsume");
+  var mustConsume = /* @__PURE__ */ __name(function(type) {
+    var value2 = tryConsume(type);
+    if (value2 !== void 0)
+      return value2;
+    var _a2 = tokens[i], nextType = _a2.type, index = _a2.index;
+    throw new TypeError("Unexpected ".concat(nextType, " at ").concat(index, ", expected ").concat(type));
+  }, "mustConsume");
+  var consumeText = /* @__PURE__ */ __name(function() {
+    var result2 = "";
+    var value2;
+    while (value2 = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR")) {
+      result2 += value2;
+    }
+    return result2;
+  }, "consumeText");
+  var isSafe = /* @__PURE__ */ __name(function(value2) {
+    for (var _i = 0, delimiter_1 = delimiter; _i < delimiter_1.length; _i++) {
+      var char2 = delimiter_1[_i];
+      if (value2.indexOf(char2) > -1)
+        return true;
+    }
+    return false;
+  }, "isSafe");
+  var safePattern = /* @__PURE__ */ __name(function(prefix2) {
+    var prev = result[result.length - 1];
+    var prevText = prefix2 || (prev && typeof prev === "string" ? prev : "");
+    if (prev && !prevText) {
+      throw new TypeError('Must have text between two parameters, missing text after "'.concat(prev.name, '"'));
+    }
+    if (!prevText || isSafe(prevText))
+      return "[^".concat(escapeString(delimiter), "]+?");
+    return "(?:(?!".concat(escapeString(prevText), ")[^").concat(escapeString(delimiter), "])+?");
+  }, "safePattern");
+  while (i < tokens.length) {
+    var char = tryConsume("CHAR");
+    var name = tryConsume("NAME");
+    var pattern = tryConsume("PATTERN");
+    if (name || pattern) {
+      var prefix = char || "";
+      if (prefixes.indexOf(prefix) === -1) {
+        path += prefix;
+        prefix = "";
+      }
+      if (path) {
+        result.push(path);
+        path = "";
+      }
+      result.push({
+        name: name || key++,
+        prefix,
+        suffix: "",
+        pattern: pattern || safePattern(prefix),
+        modifier: tryConsume("MODIFIER") || ""
+      });
+      continue;
+    }
+    var value = char || tryConsume("ESCAPED_CHAR");
+    if (value) {
+      path += value;
+      continue;
+    }
+    if (path) {
+      result.push(path);
+      path = "";
+    }
+    var open = tryConsume("OPEN");
+    if (open) {
+      var prefix = consumeText();
+      var name_1 = tryConsume("NAME") || "";
+      var pattern_1 = tryConsume("PATTERN") || "";
+      var suffix = consumeText();
+      mustConsume("CLOSE");
+      result.push({
+        name: name_1 || (pattern_1 ? key++ : ""),
+        pattern: name_1 && !pattern_1 ? safePattern(prefix) : pattern_1,
+        prefix,
+        suffix,
+        modifier: tryConsume("MODIFIER") || ""
+      });
+      continue;
+    }
+    mustConsume("END");
+  }
+  return result;
+}
+__name(parse, "parse");
+function match(str, options) {
+  var keys = [];
+  var re = pathToRegexp(str, keys, options);
+  return regexpToFunction(re, keys, options);
+}
+__name(match, "match");
+function regexpToFunction(re, keys, options) {
+  if (options === void 0) {
+    options = {};
+  }
+  var _a = options.decode, decode = _a === void 0 ? function(x) {
+    return x;
+  } : _a;
+  return function(pathname) {
+    var m = re.exec(pathname);
+    if (!m)
+      return false;
+    var path = m[0], index = m.index;
+    var params = /* @__PURE__ */ Object.create(null);
+    var _loop_1 = /* @__PURE__ */ __name(function(i2) {
+      if (m[i2] === void 0)
+        return "continue";
+      var key = keys[i2 - 1];
+      if (key.modifier === "*" || key.modifier === "+") {
+        params[key.name] = m[i2].split(key.prefix + key.suffix).map(function(value) {
+          return decode(value, key);
+        });
+      } else {
+        params[key.name] = decode(m[i2], key);
+      }
+    }, "_loop_1");
+    for (var i = 1; i < m.length; i++) {
+      _loop_1(i);
+    }
+    return { path, index, params };
+  };
+}
+__name(regexpToFunction, "regexpToFunction");
+function escapeString(str) {
+  return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
+}
+__name(escapeString, "escapeString");
+function flags(options) {
+  return options && options.sensitive ? "" : "i";
+}
+__name(flags, "flags");
+function regexpToRegexp(path, keys) {
+  if (!keys)
+    return path;
+  var groupsRegex = /\((?:\?<(.*?)>)?(?!\?)/g;
+  var index = 0;
+  var execResult = groupsRegex.exec(path.source);
+  while (execResult) {
+    keys.push({
+      // Use parenthesized substring match if available, index otherwise
+      name: execResult[1] || index++,
+      prefix: "",
+      suffix: "",
+      modifier: "",
+      pattern: ""
+    });
+    execResult = groupsRegex.exec(path.source);
+  }
+  return path;
+}
+__name(regexpToRegexp, "regexpToRegexp");
+function arrayToRegexp(paths, keys, options) {
+  var parts = paths.map(function(path) {
+    return pathToRegexp(path, keys, options).source;
+  });
+  return new RegExp("(?:".concat(parts.join("|"), ")"), flags(options));
+}
+__name(arrayToRegexp, "arrayToRegexp");
+function stringToRegexp(path, keys, options) {
+  return tokensToRegexp(parse(path, options), keys, options);
+}
+__name(stringToRegexp, "stringToRegexp");
+function tokensToRegexp(tokens, keys, options) {
+  if (options === void 0) {
+    options = {};
+  }
+  var _a = options.strict, strict = _a === void 0 ? false : _a, _b = options.start, start = _b === void 0 ? true : _b, _c = options.end, end = _c === void 0 ? true : _c, _d = options.encode, encode = _d === void 0 ? function(x) {
+    return x;
+  } : _d, _e = options.delimiter, delimiter = _e === void 0 ? "/#?" : _e, _f = options.endsWith, endsWith = _f === void 0 ? "" : _f;
+  var endsWithRe = "[".concat(escapeString(endsWith), "]|$");
+  var delimiterRe = "[".concat(escapeString(delimiter), "]");
+  var route = start ? "^" : "";
+  for (var _i = 0, tokens_1 = tokens; _i < tokens_1.length; _i++) {
+    var token = tokens_1[_i];
+    if (typeof token === "string") {
+      route += escapeString(encode(token));
+    } else {
+      var prefix = escapeString(encode(token.prefix));
+      var suffix = escapeString(encode(token.suffix));
+      if (token.pattern) {
+        if (keys)
+          keys.push(token);
+        if (prefix || suffix) {
+          if (token.modifier === "+" || token.modifier === "*") {
+            var mod = token.modifier === "*" ? "?" : "";
+            route += "(?:".concat(prefix, "((?:").concat(token.pattern, ")(?:").concat(suffix).concat(prefix, "(?:").concat(token.pattern, "))*)").concat(suffix, ")").concat(mod);
+          } else {
+            route += "(?:".concat(prefix, "(").concat(token.pattern, ")").concat(suffix, ")").concat(token.modifier);
+          }
+        } else {
+          if (token.modifier === "+" || token.modifier === "*") {
+            throw new TypeError('Can not repeat "'.concat(token.name, '" without a prefix and suffix'));
+          }
+          route += "(".concat(token.pattern, ")").concat(token.modifier);
+        }
+      } else {
+        route += "(?:".concat(prefix).concat(suffix, ")").concat(token.modifier);
+      }
+    }
+  }
+  if (end) {
+    if (!strict)
+      route += "".concat(delimiterRe, "?");
+    route += !options.endsWith ? "$" : "(?=".concat(endsWithRe, ")");
+  } else {
+    var endToken = tokens[tokens.length - 1];
+    var isEndDelimited = typeof endToken === "string" ? delimiterRe.indexOf(endToken[endToken.length - 1]) > -1 : endToken === void 0;
+    if (!strict) {
+      route += "(?:".concat(delimiterRe, "(?=").concat(endsWithRe, "))?");
+    }
+    if (!isEndDelimited) {
+      route += "(?=".concat(delimiterRe, "|").concat(endsWithRe, ")");
+    }
+  }
+  return new RegExp(route, flags(options));
+}
+__name(tokensToRegexp, "tokensToRegexp");
+function pathToRegexp(path, keys, options) {
+  if (path instanceof RegExp)
+    return regexpToRegexp(path, keys);
+  if (Array.isArray(path))
+    return arrayToRegexp(path, keys, options);
+  return stringToRegexp(path, keys, options);
+}
+__name(pathToRegexp, "pathToRegexp");
+
+// ../../../AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/wrangler/templates/pages-template-worker.ts
+var escapeRegex = /[.+?^${}()|[\]\\]/g;
+function getOriginalPathPrefix(requestPath, normalizedPrefix) {
+  let end = 0;
+  for (let index = 0; index < normalizedPrefix.length; index++) {
+    end++;
+    if (normalizedPrefix[index] === "/") {
+      while (requestPath[end] === "/") {
+        end++;
+      }
+    }
+  }
+  return requestPath.slice(0, end);
+}
+__name(getOriginalPathPrefix, "getOriginalPathPrefix");
+function* executeRequest(request) {
+  const requestPath = new URL(request.url).pathname;
+  const normalizedRequestPath = requestPath.replace(/\/+/g, "/");
+  for (const route of [...routes].reverse()) {
+    if (route.method && route.method !== request.method) {
+      continue;
+    }
+    const routeMatcher = match(route.routePath.replace(escapeRegex, "\\$&"), {
+      end: false
+    });
+    const mountMatcher = match(route.mountPath.replace(escapeRegex, "\\$&"), {
+      end: false
+    });
+    const matchResult = routeMatcher(requestPath) || routeMatcher(normalizedRequestPath);
+    const originalMountMatch = mountMatcher(requestPath);
+    const mountMatchResult = originalMountMatch || mountMatcher(normalizedRequestPath);
+    if (matchResult && mountMatchResult) {
+      const path = originalMountMatch ? originalMountMatch.path : getOriginalPathPrefix(requestPath, mountMatchResult.path);
+      for (const handler of route.middlewares.flat()) {
+        yield {
+          handler,
+          params: matchResult.params,
+          path
+        };
+      }
+    }
+  }
+  for (const route of routes) {
+    if (route.method && route.method !== request.method) {
+      continue;
+    }
+    const routeMatcher = match(route.routePath.replace(escapeRegex, "\\$&"), {
+      end: true
+    });
+    const mountMatcher = match(route.mountPath.replace(escapeRegex, "\\$&"), {
+      end: false
+    });
+    const matchResult = routeMatcher(requestPath);
+    const mountMatchResult = mountMatcher(requestPath);
+    if (matchResult && mountMatchResult && route.modules.length) {
+      for (const handler of route.modules.flat()) {
+        yield {
+          handler,
+          params: matchResult.params,
+          path: matchResult.path
+        };
+      }
+      break;
+    }
+  }
+}
+__name(executeRequest, "executeRequest");
+var pages_template_worker_default = {
+  async fetch(originalRequest, env, workerContext) {
+    let request = originalRequest;
+    const handlerIterator = executeRequest(request);
+    let data = {};
+    let isFailOpen = false;
+    const next = /* @__PURE__ */ __name(async (input, init) => {
+      if (input !== void 0) {
+        let url = input;
+        if (typeof input === "string") {
+          url = new URL(input, request.url).toString();
+        }
+        request = new Request(url, init);
+      }
+      const result = handlerIterator.next();
+      if (result.done === false) {
+        const { handler, params, path } = result.value;
+        const context = {
+          request: new Request(request.clone()),
+          functionPath: path,
+          next,
+          params,
+          get data() {
+            return data;
+          },
+          set data(value) {
+            if (typeof value !== "object" || value === null) {
+              throw new Error("context.data must be an object");
+            }
+            data = value;
+          },
+          env,
+          waitUntil: workerContext.waitUntil.bind(workerContext),
+          passThroughOnException: /* @__PURE__ */ __name(() => {
+            isFailOpen = true;
+          }, "passThroughOnException")
+        };
+        const response = await handler(context);
+        if (!(response instanceof Response)) {
+          throw new Error("Your Pages function should return a Response");
+        }
+        return cloneResponse(response);
+      } else if ("ASSETS") {
+        const response = await env["ASSETS"].fetch(request);
+        return cloneResponse(response);
+      } else {
+        const response = await fetch(request);
+        return cloneResponse(response);
+      }
+    }, "next");
+    try {
+      return await next();
+    } catch (error) {
+      if (isFailOpen) {
+        const response = await env["ASSETS"].fetch(request);
+        return cloneResponse(response);
+      }
+      throw error;
+    }
+  }
+};
+var cloneResponse = /* @__PURE__ */ __name((response) => (
+  // https://fetch.spec.whatwg.org/#null-body-status
+  new Response(
+    [101, 204, 205, 304].includes(response.status) ? null : response.body,
+    response
+  )
+), "cloneResponse");
+export {
+  pages_template_worker_default as default
+};
+
+------formdata-undici-084214752704--
