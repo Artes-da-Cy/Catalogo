@@ -21,7 +21,7 @@ imagens no R2. O catálogo do navegador não usa arquivo JSON local.
 6. Publique:
 
    ```powershell
-   npx.cmd wrangler pages deploy . --project-name artesdacy
+   powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\deploy-pages.ps1"
    ```
 
 ## Login Google do painel administrativo
